@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>웹 타자연습</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="typing-container">
+    <!-- 상단 헤더 및 메뉴 -->
+    <header>
+      <h1 class="logo">한컴스타일 타자연습</h1>
+      <nav class="mode-nav">
+        <button class="mode-btn active" data-mode="key">자리연습</button>
+        <button class="mode-btn" data-mode="word">낱말연습</button>
+        <button class="mode-btn" data-mode="short">단문연습</button>
+        <button class="mode-btn" data-mode="long">장문연습</button>
+      </nav>
+    </header>
+
+    <!-- 자리연습 전용 세부 메뉴 -->
+    <div id="sub-menu-bar" class="sub-menu-bar">
+      <button class="sub-btn active" data-pos="base">기본자리</button>
+      <button class="sub-btn" data-pos="left-top">왼손윗자리</button>
+      <button class="sub-btn" data-pos="left-bottom">왼손아랫자리</button>
+      <button class="sub-btn" data-pos="center">가운데자리</button>
+      <button class="sub-btn" data-pos="right-top">오른손윗자리</button>
+      <button class="sub-btn" data-pos="right-bottom">오른손아랫자리</button>
+      <button class="sub-btn" data-pos="all">전체자리</button>
+      <button class="sub-btn" data-pos="number">숫자자리</button>
+    </div>
+
+    <!-- 상태 대시보드 -->
+    <section class="dashboard">
+      <div class="stat-card">
+        <span class="stat-label">현재 타수</span>
+        <div class="stat-value-group">
+          <span id="cpm-display" class="stat-value highlight">0</span>
+          <span class="stat-unit">타/분</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">정확도</span>
+        <div class="stat-value-group">
+          <span id="accuracy-display" class="stat-value">100</span>
+          <span class="stat-unit">%</span>
+        </div>
+      </div>
+      <div class="stat-card progress-card">
+        <div class="progress-info">
+          <span class="stat-label">진행도</span>
+          <span id="progress-percent" class="progress-text">0%</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div id="progress-bar" class="progress-bar-fill"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 타자 연습 영역 -->
+    <main class="practice-area">
+      <div class="display-card">
+        <div id="target-display" class="target-display"></div>
+      </div>
+
+      <div class="input-wrapper">
+        <input 
+          type="text" 
+          id="typing-input" 
+          class="typing-input" 
+          placeholder="여기를 클릭하고 입력을 시작하세요..." 
+          autocomplete="off" 
+          spellcheck="false"
+        >
+      </div>
+    </main>
+
+    <!-- 결과 모달 -->
+    <div id="result-modal" class="modal hidden">
+      <div class="modal-content">
+        <h2>연습 완료!</h2>
+        <div class="result-stats">
+          <p>최종 정확도: <span id="final-acc">0</span>%</p>
+          <p>진행 완료 개수: <span id="final-count">0</span>개</p>
+        </div>
+        <button id="restart-btn" class="restart-btn">다시 시작하기</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
