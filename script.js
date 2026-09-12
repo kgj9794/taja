@@ -84,14 +84,16 @@ let currentSubPos = "base";
 let activeList = [];
 let currentIndex = 0;
 
-let recentStrokes = [];
-const TIME_WINDOW_SEC = 3.0;
+let sentenceStartTime = null;
+let currentSentenceStrokes = 0;
+let lastFinishedCPM = 0;
+let totalCompletedStrokes = 0;
+let totalCompletedTime = 0;
 
+let lastAccuracy = 100;
 let pastAttemptedChars = 0;
 let pastCorrectChars = 0;
-let totalCumulativeStrokes = 0;
 
-// 시간 관리
 let timerInterval = null;
 let startTime = null;
 let elapsedSeconds = 0;
@@ -103,11 +105,19 @@ let isKeyboardVisible = true;
 /* =====================================================================
    4. DOM 요소
    ===================================================================== */
+const loadingScreen = document.getElementById("loading-screen");
+const typingContainer = document.getElementById("typing-container");
+
 const modeBtns = document.querySelectorAll(".mode-btn");
 const subMenuBar = document.getElementById("sub-menu-bar");
 const subBtns = document.querySelectorAll(".sub-btn");
 
-const timeDisplay = document.getElementById("time-display");
+// 4개 분리 자릿수 요소
+const timeM1 = document.getElementById("time-m1");
+const timeM2 = document.getElementById("time-m2");
+const timeS1 = document.getElementById("time-s1");
+const timeS2 = document.getElementById("time-s2");
+
 const cpmDisplay = document.getElementById("cpm-display");
 const accuracyDisplay = document.getElementById("accuracy-display");
 const progressPercent = document.getElementById("progress-percent");
@@ -128,12 +138,22 @@ const finalTime = document.getElementById("final-time");
 const restartBtn = document.getElementById("restart-btn");
 
 /* =====================================================================
-   5. 시간 제어 함수
+   5. 시간 및 타이머 제어 함수 (자릿수별 독립 슬라이드 롤업)
    ===================================================================== */
 function formatTime(seconds) {
   const m = Math.floor(seconds / 60).toString().padStart(2, "0");
   const s = (seconds % 60).toString().padStart(2, "0");
   return `${m}:${s}`;
+}
+
+// 특정 자릿수의 값이 바뀔 때만 아래에서 위로 롤업 애니메이션 실행
+function updateDigit(element, nextVal) {
+  if (element.textContent !== nextVal) {
+    element.textContent = nextVal;
+    element.classList.remove("time-slide-up");
+    void element.offsetWidth; // Reflow
+    element.classList.add("time-slide-up");
+  }
 }
 
 function startTimer() {
@@ -143,8 +163,21 @@ function startTimer() {
 
   timerInterval = setInterval(() => {
     elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
-    timeDisplay.textContent = formatTime(elapsedSeconds);
-  }, 500);
+
+    const curM = Math.floor(elapsedSeconds / 60);
+    const curS = elapsedSeconds % 60;
+
+    const m1 = Math.floor(curM / 10).toString();
+    const m2 = (curM % 10).toString();
+    const s1 = Math.floor(curS / 10).toString();
+    const s2 = (curS % 10).toString();
+
+    // 각 자릿수를 독립적으로 비교하여 바뀐 자릿수만 롤업
+    updateDigit(timeM1, m1);
+    updateDigit(timeM2, m2);
+    updateDigit(timeS1, s1);
+    updateDigit(timeS2, s2);
+  }, 200);
 }
 
 function stopTimer() {
@@ -158,11 +191,14 @@ function stopTimer() {
 function resetTimer() {
   stopTimer();
   elapsedSeconds = 0;
-  timeDisplay.textContent = "00:00";
+  [timeM1, timeM2, timeS1, timeS2].forEach((el) => {
+    el.textContent = "0";
+    el.classList.remove("time-slide-up");
+  });
 }
 
 /* =====================================================================
-   6. 정확도 실시간 계산 모듈
+   6. 정확도 실시간 계산 및 변동 애니메이션 (드롭 / 띠용~ 관성)
    ===================================================================== */
 function getCurrentAccuracy() {
   const targetText = activeList[currentIndex] || "";
@@ -184,7 +220,22 @@ function getCurrentAccuracy() {
 }
 
 function updateStats() {
-  accuracyDisplay.textContent = getCurrentAccuracy();
+  const currentAcc = getCurrentAccuracy();
+
+  if (currentAcc !== lastAccuracy) {
+    accuracyDisplay.textContent = currentAcc;
+    accuracyDisplay.classList.remove("acc-drop", "acc-bounce-up");
+    void accuracyDisplay.offsetWidth; // Reflow
+
+    if (currentAcc < lastAccuracy) {
+      accuracyDisplay.classList.add("acc-drop");
+    } else if (currentAcc > lastAccuracy) {
+      accuracyDisplay.classList.add("acc-bounce-up");
+    }
+    lastAccuracy = currentAcc;
+  } else {
+    accuracyDisplay.textContent = currentAcc;
+  }
 
   const progress = activeList.length > 0 ? Math.round((currentIndex / activeList.length) * 100) : 0;
   progressPercent.textContent = `${progress}%`;
@@ -192,7 +243,7 @@ function updateStats() {
 }
 
 /* =====================================================================
-   7. 게임 제어 및 좌측 기준선 1:1 일치 렌더링
+   7. 게임 제어 및 화면 렌더링
    ===================================================================== */
 function initPractice() {
   isTransitioning = false;
@@ -209,9 +260,16 @@ function initPractice() {
   currentIndex = 0;
   pastAttemptedChars = 0;
   pastCorrectChars = 0;
-  totalCumulativeStrokes = 0;
-  recentStrokes = [];
-  lastInputLength = 0;
+
+  lastAccuracy = 100;
+  accuracyDisplay.classList.remove("acc-drop", "acc-bounce-up");
+
+  sentenceStartTime = null;
+  currentSentenceStrokes = 0;
+  lastFinishedCPM = 0;
+  totalCompletedStrokes = 0;
+  totalCompletedTime = 0;
+  cpmDisplay.textContent = "0";
 
   typingInput.value = "";
   practiceBoard.classList.remove("input-error");
@@ -228,7 +286,6 @@ function shuffle(array) {
   return array.sort(() => Math.random() - 0.5);
 }
 
-// 상단과 하단을 0번 인덱스부터 완전히 동일한 X좌표로 렌더링
 function renderBoard() {
   if (currentIndex >= activeList.length) {
     finishPractice();
@@ -238,7 +295,6 @@ function renderBoard() {
   const target = activeList[currentIndex] || "";
   const currentInput = typingInput.value;
 
-  // 1단: 문제 문장 (선행 공백 없이 클리어 후 순수 스팬만 주입)
   targetDisplay.innerHTML = "";
   for (let i = 0; i < target.length; i++) {
     const span = document.createElement("span");
@@ -247,7 +303,6 @@ function renderBoard() {
     targetDisplay.appendChild(span);
   }
 
-  // 2단: 사용자 입력 (선행 공백 없이 클리어 후 글자 + 커서 주입)
   userDisplay.innerHTML = "";
   for (let i = 0; i < currentInput.length; i++) {
     const span = document.createElement("span");
@@ -261,7 +316,6 @@ function renderBoard() {
     userDisplay.appendChild(span);
   }
 
-  // 깜빡이는 커서 주입
   const cursor = document.createElement("span");
   cursor.className = "blinking-cursor";
   cursor.textContent = "|";
@@ -275,6 +329,16 @@ function handleNext() {
   const targetText = activeList[currentIndex];
   const currentInput = typingInput.value;
 
+  if (sentenceStartTime) {
+    const sentenceDuration = (Date.now() - sentenceStartTime) / 1000;
+    totalCompletedTime += sentenceDuration;
+    totalCompletedStrokes += currentSentenceStrokes;
+
+    const effectiveDuration = Math.max(sentenceDuration, 0.4);
+    lastFinishedCPM = Math.round((currentSentenceStrokes / effectiveDuration) * 60);
+    cpmDisplay.textContent = lastFinishedCPM;
+  }
+
   const maxLen = Math.max(targetText.length, currentInput.length);
   for (let i = 0; i < maxLen; i++) {
     pastAttemptedChars++;
@@ -285,8 +349,10 @@ function handleNext() {
 
   currentIndex++;
 
+  sentenceStartTime = null;
+  currentSentenceStrokes = 0;
+
   typingInput.value = "";
-  lastInputLength = 0;
   practiceBoard.classList.remove("input-error");
   typingInput.blur();
 
@@ -299,7 +365,6 @@ function handleNext() {
 
     setTimeout(() => {
       typingInput.value = "";
-      lastInputLength = 0;
       typingInput.focus();
       isTransitioning = false;
     }, 25);
@@ -313,8 +378,8 @@ function finishPractice() {
   userDisplay.innerHTML = "";
 
   const acc = pastAttemptedChars > 0 ? Math.round((pastCorrectChars / pastAttemptedChars) * 100) : 100;
-  const timeSec = Math.max(elapsedSeconds, 1);
-  const avgCpm = Math.round((totalCumulativeStrokes / timeSec) * 60);
+  const totalDuration = Math.max(totalCompletedTime, 1);
+  const avgCpm = Math.round((totalCompletedStrokes / totalDuration) * 60);
 
   finalCpm.textContent = avgCpm;
   finalAcc.textContent = acc;
@@ -330,10 +395,8 @@ function triggerInputError() {
 }
 
 /* =====================================================================
-   8. 입력 감지 및 키 제어 (방향키 이동 차단 포함)
+   8. 입력 감지 및 키 제어
    ===================================================================== */
-let lastInputLength = 0;
-
 practiceBoard.addEventListener("click", () => {
   typingInput.focus();
 });
@@ -341,7 +404,6 @@ practiceBoard.addEventListener("click", () => {
 typingInput.addEventListener("compositionend", () => {
   if (isTransitioning) {
     typingInput.value = "";
-    lastInputLength = 0;
     renderBoard();
     updateStats();
   }
@@ -350,12 +412,18 @@ typingInput.addEventListener("compositionend", () => {
 typingInput.addEventListener("input", () => {
   if (isTransitioning) {
     typingInput.value = "";
-    lastInputLength = 0;
     return;
   }
 
-  if (!isTimerRunning && typingInput.value.length > 0) {
-    startTimer();
+  const currentInput = typingInput.value;
+
+  if (currentInput.length > 0) {
+    if (!isTimerRunning) {
+      startTimer();
+    }
+    if (!sentenceStartTime) {
+      sentenceStartTime = Date.now();
+    }
   }
 
   practiceBoard.classList.remove("input-error");
@@ -363,17 +431,8 @@ typingInput.addEventListener("input", () => {
   const targetText = activeList[currentIndex];
   if (!targetText) return;
 
-  const currentInput = typingInput.value;
+  currentSentenceStrokes = getStringStrokes(currentInput);
 
-  if (currentInput.length > lastInputLength) {
-    const addedChars = currentInput.slice(lastInputLength);
-    const strokes = getStringStrokes(addedChars);
-    recentStrokes.push({ time: Date.now(), strokes: strokes });
-    totalCumulativeStrokes += strokes;
-  }
-  lastInputLength = currentInput.length;
-
-  // 자리연습: 1글자 입력 즉시 이동
   if (currentMode === "key") {
     if (currentInput.length >= 1) {
       handleNext();
@@ -381,7 +440,6 @@ typingInput.addEventListener("input", () => {
     }
   }
 
-  // 낱말/단문/장문: 자릿수 초과 입력 시 즉시 이동
   if (currentInput.length > targetText.length) {
     handleNext();
     return;
@@ -391,9 +449,7 @@ typingInput.addEventListener("input", () => {
   updateStats();
 });
 
-// 키보드 키 제어 (방향키 차단 및 엔터 검증)
 typingInput.addEventListener("keydown", (e) => {
-  // 방향키 및 탐색 키 커서 이동 차단
   const BLOCKED_NAV_KEYS = [
     "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown",
     "Home", "End", "PageUp", "PageDown"
@@ -403,7 +459,6 @@ typingInput.addEventListener("keydown", (e) => {
     return;
   }
 
-  // 엔터 키 처리
   if (e.key === "Enter" || e.keyCode === 13) {
     e.preventDefault();
 
@@ -413,7 +468,6 @@ typingInput.addEventListener("keydown", (e) => {
       const targetText = activeList[currentIndex];
       const currentInput = typingInput.value;
 
-      // 글자 수 일치 시 통과
       if (currentInput.length === targetText.length) {
         handleNext();
       } else {
@@ -424,7 +478,7 @@ typingInput.addEventListener("keydown", (e) => {
 });
 
 /* =====================================================================
-   9. 가상 키보드 하이라이트 및 토글
+   9. 가상 키보드 반응 및 토글
    ===================================================================== */
 function clearAllActiveKeys() {
   document.querySelectorAll(".key.key-active").forEach((el) => {
@@ -464,21 +518,29 @@ toggleKeyboardBtn.addEventListener("click", () => {
 });
 
 /* =====================================================================
-   10. 실시간 타수 감쇄(Decaying CPM)
+   10. 실시간 타수 계산 및 감쇄 (50ms 주기)
    ===================================================================== */
 setInterval(() => {
-  const now = Date.now();
-  const threshold = now - TIME_WINDOW_SEC * 1000;
+  if (!sentenceStartTime) {
+    if (currentIndex > 0) {
+      cpmDisplay.textContent = lastFinishedCPM;
+    } else {
+      cpmDisplay.textContent = "0";
+    }
+    return;
+  }
 
-  recentStrokes = recentStrokes.filter((item) => item.time >= threshold);
-  const totalRecentStrokes = recentStrokes.reduce((sum, item) => sum + item.strokes, 0);
+  const elapsed = (Date.now() - sentenceStartTime) / 1000;
+  if (elapsed <= 0) return;
 
-  const currentCPM = Math.round((totalRecentStrokes / TIME_WINDOW_SEC) * 60);
+  const effectiveElapsed = Math.max(elapsed, 0.4);
+  const currentCPM = Math.round((currentSentenceStrokes / effectiveElapsed) * 60);
+
   cpmDisplay.textContent = currentCPM;
-}, 100);
+}, 50);
 
 /* =====================================================================
-   11. 메뉴 전환 및 초기 실행
+   11. 메뉴 전환 및 재시작
    ===================================================================== */
 modeBtns.forEach((btn) => {
   btn.addEventListener("click", () => {
@@ -500,4 +562,15 @@ subBtns.forEach((btn) => {
 
 restartBtn.addEventListener("click", initPractice);
 
-initPractice();
+/* =====================================================================
+   12. 접속 로딩 제어
+   ===================================================================== */
+window.addEventListener("DOMContentLoaded", () => {
+  initPractice();
+
+  setTimeout(() => {
+    loadingScreen.classList.add("fade-out");
+    typingContainer.classList.add("fade-in");
+    typingInput.focus();
+  }, 700);
+});
