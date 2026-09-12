@@ -7,7 +7,14 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="typing-container">
+  <!-- 접속 로딩 화면 -->
+  <div id="loading-screen" class="loading-screen">
+    <div class="spinner"></div>
+    <p class="loading-text">접속하는 중..</p>
+  </div>
+
+  <!-- 메인 컨테이너 -->
+  <div id="typing-container" class="typing-container fade-init">
     <!-- 상단 헤더 및 모드 선택 -->
     <header>
       <div class="header-left">
@@ -34,12 +41,16 @@
       <button class="sub-btn" data-pos="number">숫자자리</button>
     </div>
 
-    <!-- 상태 대시보드 -->
+    <!-- 대시보드 (분/초 십의자리·일의자리 4개 개별 독립 분리) -->
     <section class="dashboard">
       <div class="stat-card">
         <span class="stat-label">진행 시간</span>
         <div class="stat-value-group">
-          <span id="time-display" class="stat-value">00:00</span>
+          <div class="stat-value time-group">
+            <span id="time-m1" class="time-digit">0</span><span id="time-m2" class="time-digit">0</span>
+            <span class="time-colon">:</span>
+            <span id="time-s1" class="time-digit">0</span><span id="time-s2" class="time-digit">0</span>
+          </div>
         </div>
       </div>
       <div class="stat-card">
@@ -68,7 +79,7 @@
       </div>
     </section>
 
-    <!-- 타자 연습 영역 (HTML 내부 공백 원천 차단) -->
+    <!-- 타자 연습 영역 -->
     <main class="practice-area">
       <div id="practice-board" class="practice-board">
         <div class="text-line target-line"><div id="target-display" class="line-content"></div></div>
@@ -98,16 +109,16 @@
 
       <div class="key-row">
         <div class="key key-tab" data-code="Tab">Tab</div>
-        <div class="key" data-code="KeyQ"><span class="ko">ㅃ/ㅂ</span><span class="en">Q</span></div>
-        <div class="key" data-code="KeyW"><span class="ko">ㅉ/ㅈ</span><span class="en">W</span></div>
-        <div class="key" data-code="KeyE"><span class="ko">ㄸ/ㄷ</span><span class="en">E</span></div>
-        <div class="key" data-code="KeyR"><span class="ko">ㄲ/ㄱ</span><span class="en">R</span></div>
-        <div class="key" data-code="KeyT"><span class="ko">ㅆ/ㅅ</span><span class="en">T</span></div>
+        <div class="key" data-code="KeyQ"><span class="ko">ㅂ</span><span class="en">Q</span></div>
+        <div class="key" data-code="KeyW"><span class="ko">ㅈ</span><span class="en">W</span></div>
+        <div class="key" data-code="KeyE"><span class="ko">ㄷ</span><span class="en">E</span></div>
+        <div class="key" data-code="KeyR"><span class="ko">ㄱ</span><span class="en">R</span></div>
+        <div class="key" data-code="KeyT"><span class="ko">ㅅ</span><span class="en">T</span></div>
         <div class="key" data-code="KeyY"><span class="ko">ㅛ</span><span class="en">Y</span></div>
         <div class="key" data-code="KeyU"><span class="ko">ㅕ</span><span class="en">U</span></div>
         <div class="key" data-code="KeyI"><span class="ko">ㅑ</span><span class="en">I</span></div>
-        <div class="key" data-code="KeyO"><span class="ko">ㅒ/ㅐ</span><span class="en">O</span></div>
-        <div class="key" data-code="KeyP"><span class="ko">ㅖ/ㅔ</span><span class="en">P</span></div>
+        <div class="key" data-code="KeyO"><span class="ko">ㅐ</span><span class="en">O</span></div>
+        <div class="key" data-code="KeyP"><span class="ko">ㅔ</span><span class="en">P</span></div>
         <div class="key" data-code="BracketLeft"><span>{</span><span>[</span></div>
         <div class="key" data-code="BracketRight"><span>}</span><span>]</span></div>
         <div class="key key-backslash" data-code="Backslash"><span>|</span><span>\</span></div>
