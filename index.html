@@ -41,7 +41,7 @@
       <button class="sub-btn" data-pos="number">숫자자리</button>
     </div>
 
-    <!-- 대시보드 (분/초 십의자리·일의자리 4개 개별 독립 분리) -->
+    <!-- 대시보드 (분/초 4자리 개별 분리) -->
     <section class="dashboard">
       <div class="stat-card">
         <span class="stat-label">진행 시간</span>
@@ -79,11 +79,25 @@
       </div>
     </section>
 
-    <!-- 타자 연습 영역 -->
+    <!-- 타자 연습 영역 (상단 현재 문제 + 1:1 입력창 / 하단 다음 문장 미리보기) -->
     <main class="practice-area">
       <div id="practice-board" class="practice-board">
-        <div class="text-line target-line"><div id="target-display" class="line-content"></div></div>
-        <div class="text-line input-line"><div id="user-display" class="line-content"></div></div>
+        <!-- 상단: 현재 진행 구역 -->
+        <div id="current-section" class="current-section">
+          <div class="text-line target-line">
+            <div id="target-display" class="line-content"></div>
+          </div>
+          <div class="text-line input-line">
+            <div id="user-display" class="line-content"></div>
+          </div>
+        </div>
+
+        <!-- 하단: 다음에 나올 문장 미리보기 구역 -->
+        <div id="next-section" class="next-section">
+          <div id="next-display" class="next-content"></div>
+        </div>
+
+        <!-- 실제 키보드 입력 수신용 숨김 인풋 -->
         <input type="text" id="typing-input" class="hidden-input" autocomplete="off" spellcheck="false">
       </div>
     </main>
