@@ -85,12 +85,20 @@ let activeList = [];
 let currentIndex = 0;
 
 let recentStrokes = [];
-const TIME_WINDOW_SEC = 3.0; // 최근 3초 기준 감쇄
+const TIME_WINDOW_SEC = 3.0; // 순간 타수 감쇄 윈도우
 
 let totalAttemptedChars = 0;
 let totalCorrectChars = 0;
+let totalCumulativeStrokes = 0; // 평균 타수 산출용 누적 타수
+
+// 시간 관리
+let timerInterval = null;
+let startTime = null;
+let elapsedSeconds = 0;
+let isTimerRunning = false;
 
 let isTransitioning = false; // IME 조합 잔여 글자 차단 플래그
+let isKeyboardVisible = true; // 가상 키보드 표시 여부
 
 /* =====================================================================
    4. DOM 요소
@@ -99,6 +107,7 @@ const modeBtns = document.querySelectorAll(".mode-btn");
 const subMenuBar = document.getElementById("sub-menu-bar");
 const subBtns = document.querySelectorAll(".sub-btn");
 
+const timeDisplay = document.getElementById("time-display");
 const cpmDisplay = document.getElementById("cpm-display");
 const accuracyDisplay = document.getElementById("accuracy-display");
 const progressPercent = document.getElementById("progress-percent");
@@ -108,15 +117,54 @@ const targetDisplay = document.getElementById("target-display");
 const typingInput = document.getElementById("typing-input");
 
 const resultModal = document.getElementById("result-modal");
+const finalCpm = document.getElementById("final-cpm");
 const finalAcc = document.getElementById("final-acc");
-const finalCount = document.getElementById("final-count");
+const finalTime = document.getElementById("final-time");
 const restartBtn = document.getElementById("restart-btn");
 
+const keyboardWrapper = document.getElementById("keyboard-wrapper");
+const toggleKeyboardBtn = document.getElementById("toggle-keyboard-btn");
+
 /* =====================================================================
-   5. 게임 제어 및 화면 렌더링
+   5. 시간 제어 함수
+   ===================================================================== */
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60).toString().padStart(2, "0");
+  const s = (seconds % 60).toString().padStart(2, "0");
+  return `${m}:${s}`;
+}
+
+function startTimer() {
+  if (isTimerRunning) return;
+  isTimerRunning = true;
+  startTime = Date.now() - elapsedSeconds * 1000;
+
+  timerInterval = setInterval(() => {
+    elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+    timeDisplay.textContent = formatTime(elapsedSeconds);
+  }, 500);
+}
+
+function stopTimer() {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  isTimerRunning = false;
+}
+
+function resetTimer() {
+  stopTimer();
+  elapsedSeconds = 0;
+  timeDisplay.textContent = "00:00";
+}
+
+/* =====================================================================
+   6. 게임 제어 및 렌더링
    ===================================================================== */
 function initPractice() {
   isTransitioning = false;
+  resetTimer();
 
   if (currentMode === "key") {
     subMenuBar.style.display = "flex";
@@ -129,12 +177,17 @@ function initPractice() {
   currentIndex = 0;
   totalAttemptedChars = 0;
   totalCorrectChars = 0;
+  totalCumulativeStrokes = 0;
   recentStrokes = [];
   lastInputLength = 0;
+
   typingInput.value = "";
   typingInput.classList.remove("input-error");
   typingInput.disabled = false;
   resultModal.classList.add("hidden");
+
+  // 키보드에 남아있을 수 있는 active 스타일 제거
+  clearAllActiveKeys();
 
   renderTarget();
   updateStats();
@@ -145,7 +198,6 @@ function shuffle(array) {
   return array.sort(() => Math.random() - 0.5);
 }
 
-// 대상 글자 렌더링 (일치 시 초록색, 불일치 시 빨간색 밑줄)
 function renderTarget() {
   if (currentIndex >= activeList.length) {
     finishPractice();
@@ -176,7 +228,6 @@ function renderTarget() {
   }
 }
 
-// 다음 단계로 넘어가기 (채점 후 초기화)
 function handleNext() {
   if (isTransitioning) return;
   isTransitioning = true;
@@ -184,7 +235,6 @@ function handleNext() {
   const targetText = activeList[currentIndex];
   const currentInput = typingInput.value;
 
-  // 글자별 정확도 집계
   const maxLen = Math.max(targetText.length, currentInput.length);
   for (let i = 0; i < maxLen; i++) {
     totalAttemptedChars++;
@@ -195,7 +245,6 @@ function handleNext() {
 
   currentIndex++;
 
-  // IME 버퍼 제거를 위한 일시적 포커스 해제 및 초기화
   typingInput.value = "";
   lastInputLength = 0;
   typingInput.classList.remove("input-error");
@@ -208,7 +257,6 @@ function handleNext() {
     renderTarget();
     updateStats();
 
-    // 잔여 키 이벤트 루프 처리 후 재포커스
     setTimeout(() => {
       typingInput.value = "";
       lastInputLength = 0;
@@ -219,13 +267,19 @@ function handleNext() {
 }
 
 function finishPractice() {
+  stopTimer();
   typingInput.disabled = true;
   targetDisplay.textContent = "연습이 완료되었습니다!";
-  
+
   const acc = totalAttemptedChars > 0 ? Math.round((totalCorrectChars / totalAttemptedChars) * 100) : 100;
+  const timeSec = Math.max(elapsedSeconds, 1);
+  const avgCpm = Math.round((totalCumulativeStrokes / timeSec) * 60);
+
+  finalCpm.textContent = avgCpm;
   finalAcc.textContent = acc;
-  finalCount.textContent = activeList.length;
+  finalTime.textContent = formatTime(elapsedSeconds);
   resultModal.classList.remove("hidden");
+  clearAllActiveKeys();
 }
 
 function triggerInputError() {
@@ -235,7 +289,7 @@ function triggerInputError() {
 }
 
 /* =====================================================================
-   6. 입력 감지 및 글자 수(자릿수) 기반 엔터 검증
+   7. 입력 감지 및 키 이벤트 로직
    ===================================================================== */
 let lastInputLength = 0;
 
@@ -253,6 +307,11 @@ typingInput.addEventListener("input", () => {
     return;
   }
 
+  // 첫 입력 시 타이머 시작
+  if (!isTimerRunning && typingInput.value.length > 0) {
+    startTimer();
+  }
+
   typingInput.classList.remove("input-error");
 
   const targetText = activeList[currentIndex];
@@ -260,15 +319,16 @@ typingInput.addEventListener("input", () => {
 
   const currentInput = typingInput.value;
 
-  // 타수 카운팅
+  // 타수 측정
   if (currentInput.length > lastInputLength) {
     const addedChars = currentInput.slice(lastInputLength);
     const strokes = getStringStrokes(addedChars);
     recentStrokes.push({ time: Date.now(), strokes: strokes });
+    totalCumulativeStrokes += strokes;
   }
   lastInputLength = currentInput.length;
 
-  // 1. 자리연습: 1글자 입력 시 즉시 이동
+  // 자리연습
   if (currentMode === "key") {
     if (currentInput.length >= 1) {
       handleNext();
@@ -276,7 +336,7 @@ typingInput.addEventListener("input", () => {
     }
   }
 
-  // 2. 낱말/단문/장문: 자릿수 초과 입력 시 즉시 채점 후 이동
+  // 낱말/단문/장문: 자릿수 초과 입력 시 즉시 이동
   if (currentInput.length > targetText.length) {
     handleNext();
     return;
@@ -285,7 +345,7 @@ typingInput.addEventListener("input", () => {
   renderTarget();
 });
 
-// 엔터 키 처리
+// 엔터 키 검증
 typingInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter" || e.keyCode === 13) {
     e.preventDefault();
@@ -296,11 +356,9 @@ typingInput.addEventListener("keydown", (e) => {
       const targetText = activeList[currentIndex];
       const currentInput = typingInput.value;
 
-      // 글자 수(자릿수)가 일치하면 오답(예: 구름 -> ㅇㅇ)이어도 채점 후 통과
       if (currentInput.length === targetText.length) {
         handleNext();
       } else {
-        // 목표 글자 수를 아직 다 채우지 못한 경우 빨간색 경고
         triggerInputError();
       }
     }
@@ -308,7 +366,51 @@ typingInput.addEventListener("keydown", (e) => {
 });
 
 /* =====================================================================
-   7. 실시간 타수 감쇄 및 대시보드
+   8. 가상 키보드 키 눌림 감지 및 온/오프 토글
+   ===================================================================== */
+function clearAllActiveKeys() {
+  document.querySelectorAll(".key.key-active").forEach((el) => {
+    el.classList.remove("key-active");
+  });
+}
+
+// 키 다운 시 가상 키보드 하이라이트
+window.addEventListener("keydown", (e) => {
+  if (!isKeyboardVisible) return;
+  const keyEl = document.querySelector(`.key[data-code="${e.code}"]`);
+  if (keyEl) {
+    keyEl.classList.add("key-active");
+  }
+});
+
+// 키 업 시 하이라이트 해제
+window.addEventListener("keyup", (e) => {
+  const keyEl = document.querySelector(`.key[data-code="${e.code}"]`);
+  if (keyEl) {
+    keyEl.classList.remove("key-active");
+  }
+});
+
+// 창 포커스 아웃 시 남아있는 키 눌림 효과 초기화
+window.addEventListener("blur", clearAllActiveKeys);
+
+// 키보드 온/오프 토글 버튼
+toggleKeyboardBtn.addEventListener("click", () => {
+  isKeyboardVisible = !isKeyboardVisible;
+  if (isKeyboardVisible) {
+    keyboardWrapper.classList.remove("hidden");
+    toggleKeyboardBtn.textContent = "⌨️ 키보드 숨기기";
+    toggleKeyboardBtn.classList.remove("off");
+  } else {
+    keyboardWrapper.classList.add("hidden");
+    toggleKeyboardBtn.textContent = "⌨️ 키보드 켜기";
+    toggleKeyboardBtn.classList.add("off");
+    clearAllActiveKeys();
+  }
+});
+
+/* =====================================================================
+   9. 실시간 통계 및 감쇄(Decay) 처리
    ===================================================================== */
 function updateStats() {
   const acc = totalAttemptedChars > 0 ? Math.round((totalCorrectChars / totalAttemptedChars) * 100) : 100;
@@ -319,7 +421,7 @@ function updateStats() {
   progressBar.style.width = `${progress}%`;
 }
 
-// 100ms 간격으로 최근 3초 내 타수 계산 (미입력 시 자연스럽게 0으로 감쇄)
+// 100ms마다 최근 3초 내 타수 계산 -> 미입력 시 자연스럽게 0으로 감쇄
 setInterval(() => {
   const now = Date.now();
   const threshold = now - TIME_WINDOW_SEC * 1000;
@@ -332,7 +434,7 @@ setInterval(() => {
 }, 100);
 
 /* =====================================================================
-   8. 메뉴 이벤트 연결
+   10. 메뉴 이벤트 연결
    ===================================================================== */
 modeBtns.forEach((btn) => {
   btn.addEventListener("click", () => {
