@@ -112,7 +112,6 @@ const modeBtns = document.querySelectorAll(".mode-btn");
 const subMenuBar = document.getElementById("sub-menu-bar");
 const subBtns = document.querySelectorAll(".sub-btn");
 
-// 4개 분리 자릿수 요소
 const timeM1 = document.getElementById("time-m1");
 const timeM2 = document.getElementById("time-m2");
 const timeS1 = document.getElementById("time-s1");
@@ -124,8 +123,11 @@ const progressPercent = document.getElementById("progress-percent");
 const progressBar = document.getElementById("progress-bar");
 
 const practiceBoard = document.getElementById("practice-board");
+const currentSection = document.getElementById("current-section");
 const targetDisplay = document.getElementById("target-display");
 const userDisplay = document.getElementById("user-display");
+const nextSection = document.getElementById("next-section");
+const nextDisplay = document.getElementById("next-display");
 const typingInput = document.getElementById("typing-input");
 
 const keyboardWrapper = document.getElementById("keyboard-wrapper");
@@ -138,7 +140,7 @@ const finalTime = document.getElementById("final-time");
 const restartBtn = document.getElementById("restart-btn");
 
 /* =====================================================================
-   5. 시간 및 타이머 제어 함수 (자릿수별 독립 슬라이드 롤업)
+   5. 시간 및 타이머 제어 함수
    ===================================================================== */
 function formatTime(seconds) {
   const m = Math.floor(seconds / 60).toString().padStart(2, "0");
@@ -146,12 +148,11 @@ function formatTime(seconds) {
   return `${m}:${s}`;
 }
 
-// 특정 자릿수의 값이 바뀔 때만 아래에서 위로 롤업 애니메이션 실행
 function updateDigit(element, nextVal) {
   if (element.textContent !== nextVal) {
     element.textContent = nextVal;
     element.classList.remove("time-slide-up");
-    void element.offsetWidth; // Reflow
+    void element.offsetWidth;
     element.classList.add("time-slide-up");
   }
 }
@@ -172,7 +173,6 @@ function startTimer() {
     const s1 = Math.floor(curS / 10).toString();
     const s2 = (curS % 10).toString();
 
-    // 각 자릿수를 독립적으로 비교하여 바뀐 자릿수만 롤업
     updateDigit(timeM1, m1);
     updateDigit(timeM2, m2);
     updateDigit(timeS1, s1);
@@ -198,7 +198,7 @@ function resetTimer() {
 }
 
 /* =====================================================================
-   6. 정확도 실시간 계산 및 변동 애니메이션 (드롭 / 띠용~ 관성)
+   6. 정확도 실시간 계산 및 변동 애니메이션
    ===================================================================== */
 function getCurrentAccuracy() {
   const targetText = activeList[currentIndex] || "";
@@ -225,7 +225,7 @@ function updateStats() {
   if (currentAcc !== lastAccuracy) {
     accuracyDisplay.textContent = currentAcc;
     accuracyDisplay.classList.remove("acc-drop", "acc-bounce-up");
-    void accuracyDisplay.offsetWidth; // Reflow
+    void accuracyDisplay.offsetWidth;
 
     if (currentAcc < lastAccuracy) {
       accuracyDisplay.classList.add("acc-drop");
@@ -271,6 +271,9 @@ function initPractice() {
   totalCompletedTime = 0;
   cpmDisplay.textContent = "0";
 
+  currentSection.classList.remove("flow-up-exit", "flow-up-enter");
+  nextDisplay.classList.remove("next-flow-in");
+
   typingInput.value = "";
   practiceBoard.classList.remove("input-error");
   typingInput.disabled = false;
@@ -295,6 +298,7 @@ function renderBoard() {
   const target = activeList[currentIndex] || "";
   const currentInput = typingInput.value;
 
+  // 상단: 현재 문제 문장
   targetDisplay.innerHTML = "";
   for (let i = 0; i < target.length; i++) {
     const span = document.createElement("span");
@@ -303,6 +307,7 @@ function renderBoard() {
     targetDisplay.appendChild(span);
   }
 
+  // 상단: 바로 밑 사용자 입력 줄
   userDisplay.innerHTML = "";
   for (let i = 0; i < currentInput.length; i++) {
     const span = document.createElement("span");
@@ -320,8 +325,16 @@ function renderBoard() {
   cursor.className = "blinking-cursor";
   cursor.textContent = "|";
   userDisplay.appendChild(cursor);
+
+  // 하단: 다음에 나올 문장 미리보기 (라벨 없이 순수 텍스트)
+  if (currentIndex + 1 < activeList.length) {
+    nextDisplay.textContent = activeList[currentIndex + 1];
+  } else {
+    nextDisplay.textContent = "마지막 문장입니다.";
+  }
 }
 
+// 위-아래 구조 전환 슬라이드 애니메이션 (아래에서 위로 상승)
 function handleNext() {
   if (isTransitioning) return;
   isTransitioning = true;
@@ -347,28 +360,45 @@ function handleNext() {
     }
   }
 
-  currentIndex++;
-
-  sentenceStartTime = null;
-  currentSentenceStrokes = 0;
+  // 1단계: 현재 구역이 위로 떠오르며 퇴장
+  currentSection.classList.remove("flow-up-enter");
+  currentSection.classList.add("flow-up-exit");
 
   typingInput.value = "";
-  practiceBoard.classList.remove("input-error");
+  userDisplay.innerHTML = '<span class="blinking-cursor">|</span>';
   typingInput.blur();
 
-  if (currentIndex >= activeList.length) {
-    finishPractice();
-    isTransitioning = false;
-  } else {
+  // 2단계: 200ms 후 인덱스 증가 및 새 문장 부드러운 상승 진입
+  setTimeout(() => {
+    currentIndex++;
+    sentenceStartTime = null;
+    currentSentenceStrokes = 0;
+
+    if (currentIndex >= activeList.length) {
+      finishPractice();
+      isTransitioning = false;
+      return;
+    }
+
     renderBoard();
     updateStats();
 
+    // 상단에 새 문제가 아래에서 자연스럽게 올라와 착지
+    currentSection.classList.remove("flow-up-exit");
+    currentSection.classList.add("flow-up-enter");
+
+    // 하단에는 새로운 다음 문장이 아래에서 은은하게 등장
+    nextDisplay.classList.remove("next-flow-in");
+    void nextDisplay.offsetWidth;
+    nextDisplay.classList.add("next-flow-in");
+
     setTimeout(() => {
-      typingInput.value = "";
+      currentSection.classList.remove("flow-up-enter");
+      nextDisplay.classList.remove("next-flow-in");
       typingInput.focus();
       isTransitioning = false;
-    }, 25);
-  }
+    }, 280);
+  }, 200);
 }
 
 function finishPractice() {
@@ -376,6 +406,7 @@ function finishPractice() {
   typingInput.disabled = true;
   targetDisplay.textContent = "연습 완료!";
   userDisplay.innerHTML = "";
+  nextDisplay.textContent = "";
 
   const acc = pastAttemptedChars > 0 ? Math.round((pastCorrectChars / pastAttemptedChars) * 100) : 100;
   const totalDuration = Math.max(totalCompletedTime, 1);
