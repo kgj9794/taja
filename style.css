@@ -2,26 +2,26 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Malgun Gothic", sans-serif;
 }
 
 body {
-  background-color: #f0f4f9;
-  color: #333;
+  background-color: #f1f5f9;
+  color: #334155;
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  padding: 20px 0;
+  padding: 24px 0;
 }
 
 .typing-container {
   width: 920px;
   max-width: 95%;
   background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  padding: 26px 30px;
+  border-radius: 18px;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+  padding: 28px 32px;
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -32,8 +32,8 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 2px solid #e9ecef;
-  padding-bottom: 15px;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 16px;
 }
 
 .header-left {
@@ -44,8 +44,9 @@ header {
 
 .logo {
   font-size: 1.35rem;
-  color: #1976d2;
+  color: #2563eb;
   font-weight: 800;
+  letter-spacing: -0.5px;
 }
 
 .mode-nav {
@@ -54,28 +55,29 @@ header {
 }
 
 .mode-btn, .sub-btn {
-  border: none;
-  background: #eef2f6;
+  border: 1px solid transparent;
+  background: #f1f5f9;
   padding: 7px 14px;
   border-radius: 8px;
   font-size: 0.9rem;
   font-weight: 600;
-  color: #555;
+  color: #64748b;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 
 .mode-btn:hover, .sub-btn:hover {
-  background: #dde5ed;
+  background: #e2e8f0;
+  color: #1e293b;
 }
 
 .mode-btn.active, .sub-btn.active {
-  background: #1976d2;
-  color: #fff;
+  background: #2563eb;
+  color: #ffffff;
 }
 
 .keyboard-toggle-btn {
-  background: #f8fafc;
+  background: #ffffff;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   padding: 7px 14px;
@@ -83,21 +85,22 @@ header {
   font-weight: 600;
   color: #475569;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 
 .keyboard-toggle-btn:hover {
-  background: #e2e8f0;
+  background: #f8fafc;
   color: #1e293b;
+  border-color: #94a3b8;
 }
 
 .keyboard-toggle-btn.off {
-  background: #fee2e2;
-  border-color: #fca5a5;
-  color: #dc2626;
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #ef4444;
 }
 
-/* 자리연습 하위 메뉴 */
+/* 자리연습 서브 메뉴 */
 .sub-menu-bar {
   display: flex;
   flex-wrap: wrap;
@@ -109,11 +112,11 @@ header {
 }
 
 .sub-btn {
-  padding: 5px 10px;
+  padding: 5px 11px;
   font-size: 0.82rem;
 }
 
-/* 대시보드 (상단 3열 + 하단 진행도 100%) */
+/* 대시보드 */
 .dashboard {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -124,14 +127,14 @@ header {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
-  padding: 12px 16px;
+  padding: 12px 18px;
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
 
 .stat-label {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   color: #64748b;
   margin-bottom: 4px;
   font-weight: 600;
@@ -144,23 +147,23 @@ header {
 }
 
 .stat-value {
-  font-size: 1.7rem;
+  font-size: 1.75rem;
   font-weight: 700;
-  color: #1e293b;
+  color: #0f172a;
 }
 
 .stat-value.highlight {
-  color: #1976d2;
+  color: #2563eb;
 }
 
 .stat-unit {
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   color: #64748b;
 }
 
 .progress-card {
   grid-column: 1 / -1;
-  padding: 10px 16px;
+  padding: 10px 18px;
 }
 
 .progress-info {
@@ -173,98 +176,134 @@ header {
 .progress-text {
   font-size: 0.9rem;
   font-weight: 700;
-  color: #1976d2;
+  color: #2563eb;
 }
 
 .progress-bar-bg {
   width: 100%;
-  height: 9px;
+  height: 8px;
   background: #e2e8f0;
-  border-radius: 5px;
+  border-radius: 4px;
   overflow: hidden;
 }
 
 .progress-bar-fill {
   height: 100%;
   width: 0%;
-  background: #1976d2;
+  background: #2563eb;
   transition: width 0.2s ease;
 }
 
-/* 입력 및 타자 영역 */
+/* =====================================================================
+   타자 연습 보드 (상·하단 좌측 기준선 1:1 완벽 정렬)
+   ===================================================================== */
 .practice-area {
+  width: 100%;
+}
+
+.practice-board {
+  position: relative;
+  width: 100%;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 14px;
+  padding: 24px 28px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  cursor: text;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.display-card {
-  min-height: 110px;
-  background: #f8fafc;
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 18px 24px;
-  position: relative;
-  overflow: hidden;
+.practice-board:focus-within {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
 }
 
-.target-display {
-  font-size: 1.75rem;
+/* 상하단 줄 공통: 마진/패딩 제거 후 좌측 정렬 */
+.text-line {
+  width: 100%;
+  display: block;
+  text-align: left;
+  margin: 0;
+  padding: 0;
+}
+
+.line-content {
+  display: block;
+  text-align: left;
+  margin: 0;
+  padding: 0;
+  font-size: 1.7rem;
+  font-weight: 600;
   letter-spacing: 2px;
-  line-height: 1.5;
-  font-weight: 500;
+  line-height: 1.4;
+  white-space: pre-wrap;
   word-break: break-all;
   user-select: none;
 }
 
-.char-pending {
+/* 1단: 문제 문장 */
+.target-line {
+  margin-bottom: 12px;
+}
+
+.target-char-done {
+  color: #0f172a;
+}
+
+.target-char-pending {
   color: #94a3b8;
 }
 
-.char-correct {
-  color: #16a34a;
-  background-color: #dcfce7;
-  border-radius: 3px;
+/* 2단: 바로 밑 사용자 입력 줄 */
+.input-line {
+  border-top: 1px solid #f1f5f9;
+  padding-top: 12px;
 }
 
-.char-wrong {
-  color: #dc2626;
+.user-char-correct {
+  color: #2563eb;
+}
+
+.user-char-wrong {
+  color: #ef4444;
   background-color: #fee2e2;
   border-radius: 3px;
   text-decoration: underline;
 }
 
-.char-current {
-  border-bottom: 3px solid #1976d2;
+/* 깜빡이는 세로 막대 커서 */
+.blinking-cursor {
+  display: inline-block;
+  font-weight: 300;
+  color: #2563eb;
+  margin-left: 1px;
+  animation: blink 0.9s infinite;
 }
 
-.input-wrapper {
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* 백그라운드 실제 입력 수신 필드 */
+.hidden-input {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: text;
+  z-index: 5;
 }
 
-.typing-input {
-  width: 100%;
-  padding: 14px 18px;
-  font-size: 1.35rem;
-  border: 2px solid #cbd5e1;
-  border-radius: 12px;
-  outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
-}
-
-.typing-input:focus {
-  border-color: #1976d2;
-  box-shadow: 0 0 0 4px rgba(25, 118, 210, 0.15);
-}
-
-.typing-input.input-error {
-  border-color: #dc2626 !important;
-  background-color: #fef2f2 !important;
-  color: #dc2626;
-  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.2) !important;
+/* 엔터 조건 미충족 시 보드 흔들림 피드백 */
+.practice-board.input-error {
+  border-color: #ef4444 !important;
+  background-color: #fffbfb;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15) !important;
   animation: shake 0.25s ease-in-out;
 }
 
@@ -276,7 +315,7 @@ header {
 }
 
 /* =====================================================================
-   가상 키보드 레이아웃 스타일
+   가상 키보드
    ===================================================================== */
 .keyboard-wrapper {
   background: #f8fafc;
@@ -287,7 +326,6 @@ header {
   flex-direction: column;
   gap: 6px;
   user-select: none;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.03);
 }
 
 .keyboard-wrapper.hidden {
@@ -329,7 +367,6 @@ header {
   color: #94a3b8;
 }
 
-/* 특수 키 가로 비율 */
 .key-backspace { flex: 1.6; font-size: 0.75rem; }
 .key-tab { flex: 1.25; font-size: 0.75rem; }
 .key-backslash { flex: 1.25; }
@@ -338,12 +375,11 @@ header {
 .key-shift { flex: 2.1; font-size: 0.75rem; }
 .key-space { flex: 6; font-size: 0.8rem; font-weight: 600; color: #64748b; }
 
-/* 키 눌림(Active) 효과 */
 .key.key-active {
-  background-color: #1976d2 !important;
+  background-color: #2563eb !important;
   color: #ffffff !important;
-  border-color: #1565c0 !important;
-  box-shadow: 0 0 0 #1565c0 !important;
+  border-color: #1d4ed8 !important;
+  box-shadow: 0 0 0 #1d4ed8 !important;
   transform: translateY(2px);
 }
 
@@ -356,7 +392,8 @@ header {
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -369,16 +406,16 @@ header {
 
 .modal-content {
   background: #ffffff;
-  padding: 32px 40px;
-  border-radius: 16px;
+  padding: 32px 38px;
+  border-radius: 18px;
   text-align: center;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
   width: 360px;
 }
 
 .modal-content h2 {
   font-size: 1.5rem;
-  color: #1976d2;
+  color: #2563eb;
   margin-bottom: 20px;
 }
 
@@ -403,22 +440,22 @@ header {
 
 .result-val strong {
   font-size: 1.25rem;
-  color: #1e293b;
+  color: #0f172a;
 }
 
 .restart-btn {
   width: 100%;
-  padding: 11px 0;
-  background: #1976d2;
+  padding: 12px 0;
+  background: #2563eb;
   color: white;
   border: none;
   border-radius: 8px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: background 0.15s ease;
 }
 
 .restart-btn:hover {
-  background: #1565c0;
+  background: #1d4ed8;
 }
