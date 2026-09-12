@@ -29,7 +29,7 @@
       <button id="toggle-keyboard-btn" class="keyboard-toggle-btn">⌨️ 키보드 숨기기</button>
     </header>
 
-    <!-- 자리연습 서브 메뉴 -->
+    <!-- 자리연습 세부 메뉴 -->
     <div id="sub-menu-bar" class="sub-menu-bar">
       <button class="sub-btn active" data-pos="base">기본자리</button>
       <button class="sub-btn" data-pos="left-top">왼손윗자리</button>
@@ -41,15 +41,17 @@
       <button class="sub-btn" data-pos="number">숫자자리</button>
     </div>
 
-    <!-- 대시보드 (분/초 4자리 개별 분리) -->
+    <!-- 대시보드 (오도미터 롤링 타임) -->
     <section class="dashboard">
       <div class="stat-card">
         <span class="stat-label">진행 시간</span>
         <div class="stat-value-group">
           <div class="stat-value time-group">
-            <span id="time-m1" class="time-digit">0</span><span id="time-m2" class="time-digit">0</span>
+            <div class="digit-box" id="slot-m1"><span class="digit-val">0</span></div>
+            <div class="digit-box" id="slot-m2"><span class="digit-val">0</span></div>
             <span class="time-colon">:</span>
-            <span id="time-s1" class="time-digit">0</span><span id="time-s2" class="time-digit">0</span>
+            <div class="digit-box" id="slot-s1"><span class="digit-val">0</span></div>
+            <div class="digit-box" id="slot-s2"><span class="digit-val">0</span></div>
           </div>
         </div>
       </div>
@@ -79,11 +81,11 @@
       </div>
     </section>
 
-    <!-- 타자 연습 영역 (상단 현재 문제 + 1:1 입력창 / 하단 다음 문장 미리보기) -->
+    <!-- 타자 연습 영역 (상하 3단 컨베이어 피드) -->
     <main class="practice-area">
       <div id="practice-board" class="practice-board">
-        <!-- 상단: 현재 진행 구역 -->
-        <div id="current-section" class="current-section">
+        <!-- 1단: 당장 입력해야 할 문장 (문제 + 1:1 수직 밀착 입력창) -->
+        <div class="sentence-slot slot-current" id="slot-current">
           <div class="text-line target-line">
             <div id="target-display" class="line-content"></div>
           </div>
@@ -92,12 +94,16 @@
           </div>
         </div>
 
-        <!-- 하단: 다음에 나올 문장 미리보기 구역 -->
-        <div id="next-section" class="next-section">
-          <div id="next-display" class="next-content"></div>
+        <!-- 2단: 그 다음 입력할 문장 -->
+        <div class="sentence-slot slot-next" id="slot-next">
+          <div id="next-display" class="preview-text"></div>
         </div>
 
-        <!-- 실제 키보드 입력 수신용 숨김 인풋 -->
+        <!-- 3단: 그 다음다음 입력할 문장 (더 쪼그맣게) -->
+        <div class="sentence-slot slot-after" id="slot-after">
+          <div id="after-display" class="preview-text"></div>
+        </div>
+
         <input type="text" id="typing-input" class="hidden-input" autocomplete="off" spellcheck="false">
       </div>
     </main>
