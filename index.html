@@ -8,15 +8,19 @@
 </head>
 <body>
   <div class="typing-container">
-    <!-- 상단 헤더 및 메뉴 -->
+    <!-- 상단 헤더 및 모드 선택 -->
     <header>
-      <h1 class="logo">한컴스타일 타자연습</h1>
-      <nav class="mode-nav">
-        <button class="mode-btn active" data-mode="key">자리연습</button>
-        <button class="mode-btn" data-mode="word">낱말연습</button>
-        <button class="mode-btn" data-mode="short">단문연습</button>
-        <button class="mode-btn" data-mode="long">장문연습</button>
-      </nav>
+      <div class="header-left">
+        <h1 class="logo">한컴스타일 타자연습</h1>
+        <nav class="mode-nav">
+          <button class="mode-btn active" data-mode="key">자리연습</button>
+          <button class="mode-btn" data-mode="word">낱말연습</button>
+          <button class="mode-btn" data-mode="short">단문연습</button>
+          <button class="mode-btn" data-mode="long">장문연습</button>
+        </nav>
+      </div>
+      <!-- 키보드 온/오프 토글 버튼 -->
+      <button id="toggle-keyboard-btn" class="keyboard-toggle-btn">⌨️ 키보드 숨기기</button>
     </header>
 
     <!-- 자리연습 전용 세부 메뉴 -->
@@ -31,8 +35,14 @@
       <button class="sub-btn" data-pos="number">숫자자리</button>
     </div>
 
-    <!-- 상태 대시보드 -->
+    <!-- 상태 대시보드 (상단: 진행시간, 타수, 정확도 / 하단: 진행도) -->
     <section class="dashboard">
+      <div class="stat-card">
+        <span class="stat-label">진행 시간</span>
+        <div class="stat-value-group">
+          <span id="time-display" class="stat-value">00:00</span>
+        </div>
+      </div>
       <div class="stat-card">
         <span class="stat-label">현재 타수</span>
         <div class="stat-value-group">
@@ -47,6 +57,8 @@
           <span class="stat-unit">%</span>
         </div>
       </div>
+
+      <!-- 하단 전체 너비 진행도 -->
       <div class="stat-card progress-card">
         <div class="progress-info">
           <span class="stat-label">진행도</span>
@@ -58,7 +70,7 @@
       </div>
     </section>
 
-    <!-- 타자 연습 영역 -->
+    <!-- 타자 연습 입력 영역 -->
     <main class="practice-area">
       <div class="display-card">
         <div id="target-display" class="target-display"></div>
@@ -76,13 +88,100 @@
       </div>
     </main>
 
+    <!-- 화면 하단 가상 키보드 레이아웃 -->
+    <div id="keyboard-wrapper" class="keyboard-wrapper">
+      <!-- 1행: 숫자 및 특수문자 -->
+      <div class="key-row">
+        <div class="key" data-code="Backquote"><span>~</span><span>`</span></div>
+        <div class="key" data-code="Digit1"><span>!</span><span>1</span></div>
+        <div class="key" data-code="Digit2"><span>@</span><span>2</span></div>
+        <div class="key" data-code="Digit3"><span>#</span><span>3</span></div>
+        <div class="key" data-code="Digit4"><span>$</span><span>4</span></div>
+        <div class="key" data-code="Digit5"><span>%</span><span>5</span></div>
+        <div class="key" data-code="Digit6"><span>^</span><span>6</span></div>
+        <div class="key" data-code="Digit7"><span>&</span><span>7</span></div>
+        <div class="key" data-code="Digit8"><span>*</span><span>8</span></div>
+        <div class="key" data-code="Digit9"><span>(</span><span>9</span></div>
+        <div class="key" data-code="Digit0"><span>)</span><span>0</span></div>
+        <div class="key" data-code="Minus"><span>_</span><span>-</span></div>
+        <div class="key" data-code="Equal"><span>+</span><span>=</span></div>
+        <div class="key key-backspace" data-code="Backspace">Backspace</div>
+      </div>
+
+      <!-- 2행: ㅂㅈㄷㄱㅅ/QWERTY -->
+      <div class="key-row">
+        <div class="key key-tab" data-code="Tab">Tab</div>
+        <div class="key" data-code="KeyQ"><span class="ko">ㅃ/ㅂ</span><span class="en">Q</span></div>
+        <div class="key" data-code="KeyW"><span class="ko">ㅉ/ㅈ</span><span class="en">W</span></div>
+        <div class="key" data-code="KeyE"><span class="ko">ㄸ/ㄷ</span><span class="en">E</span></div>
+        <div class="key" data-code="KeyR"><span class="ko">ㄲ/ㄱ</span><span class="en">R</span></div>
+        <div class="key" data-code="KeyT"><span class="ko">ㅆ/ㅅ</span><span class="en">T</span></div>
+        <div class="key" data-code="KeyY"><span class="ko">ㅛ</span><span class="en">Y</span></div>
+        <div class="key" data-code="KeyU"><span class="ko">ㅕ</span><span class="en">U</span></div>
+        <div class="key" data-code="KeyI"><span class="ko">ㅑ</span><span class="en">I</span></div>
+        <div class="key" data-code="KeyO"><span class="ko">ㅒ/ㅐ</span><span class="en">O</span></div>
+        <div class="key" data-code="KeyP"><span class="ko">ㅖ/ㅔ</span><span class="en">P</span></div>
+        <div class="key" data-code="BracketLeft"><span>{</span><span>[</span></div>
+        <div class="key" data-code="BracketRight"><span>}</span><span>]</span></div>
+        <div class="key key-backslash" data-code="Backslash"><span>|</span><span>\</span></div>
+      </div>
+
+      <!-- 3행: ㅁㄴㅇㄹㅎ -->
+      <div class="key-row">
+        <div class="key key-caps" data-code="CapsLock">Caps</div>
+        <div class="key" data-code="KeyA"><span class="ko">ㅁ</span><span class="en">A</span></div>
+        <div class="key" data-code="KeyS"><span class="ko">ㄴ</span><span class="en">S</span></div>
+        <div class="key" data-code="KeyD"><span class="ko">ㅇ</span><span class="en">D</span></div>
+        <div class="key" data-code="KeyF"><span class="ko">ㄹ</span><span class="en">F</span></div>
+        <div class="key" data-code="KeyG"><span class="ko">ㅎ</span><span class="en">G</span></div>
+        <div class="key" data-code="KeyH"><span class="ko">ㅗ</span><span class="en">H</span></div>
+        <div class="key" data-code="KeyJ"><span class="ko">ㅓ</span><span class="en">J</span></div>
+        <div class="key" data-code="KeyK"><span class="ko">ㅏ</span><span class="en">K</span></div>
+        <div class="key" data-code="KeyL"><span class="ko">ㅣ</span><span class="en">L</span></div>
+        <div class="key" data-code="Semicolon"><span>:</span><span>;</span></div>
+        <div class="key" data-code="Quote"><span>"</span><span>'</span></div>
+        <div class="key key-enter" data-code="Enter">Enter</div>
+      </div>
+
+      <!-- 4행: ㅋㅌㅊㅍㅠ -->
+      <div class="key-row">
+        <div class="key key-shift" data-code="ShiftLeft">Shift</div>
+        <div class="key" data-code="KeyZ"><span class="ko">ㅋ</span><span class="en">Z</span></div>
+        <div class="key" data-code="KeyX"><span class="ko">ㅌ</span><span class="en">X</span></div>
+        <div class="key" data-code="KeyC"><span class="ko">ㅊ</span><span class="en">C</span></div>
+        <div class="key" data-code="KeyV"><span class="ko">ㅍ</span><span class="en">V</span></div>
+        <div class="key" data-code="KeyB"><span class="ko">ㅠ</span><span class="en">B</span></div>
+        <div class="key" data-code="KeyN"><span class="ko">ㅜ</span><span class="en">N</span></div>
+        <div class="key" data-code="KeyM"><span class="ko">ㅡ</span><span class="en">M</span></div>
+        <div class="key" data-code="Comma"><span>&lt;</span><span>,</span></div>
+        <div class="key" data-code="Period"><span>&gt;</span><span>.</span></div>
+        <div class="key" data-code="Slash"><span>?</span><span>/</span></div>
+        <div class="key key-shift" data-code="ShiftRight">Shift</div>
+      </div>
+
+      <!-- 5행: 스페이스바 -->
+      <div class="key-row">
+        <div class="key key-space" data-code="Space">Space</div>
+      </div>
+    </div>
+
     <!-- 결과 모달 -->
     <div id="result-modal" class="modal hidden">
       <div class="modal-content">
         <h2>연습 완료!</h2>
         <div class="result-stats">
-          <p>최종 정확도: <span id="final-acc">0</span>%</p>
-          <p>진행 완료 개수: <span id="final-count">0</span>개</p>
+          <div class="result-row">
+            <span class="result-label">평균 타수</span>
+            <span class="result-val"><strong id="final-cpm">0</strong> 타/분</span>
+          </div>
+          <div class="result-row">
+            <span class="result-label">정확도</span>
+            <span class="result-val"><strong id="final-acc">0</strong>%</span>
+          </div>
+          <div class="result-row">
+            <span class="result-label">소요 시간</span>
+            <span class="result-val"><strong id="final-time">00:00</strong></span>
+          </div>
         </div>
         <button id="restart-btn" class="restart-btn">다시 시작하기</button>
       </div>
