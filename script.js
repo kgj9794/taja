@@ -99,8 +99,11 @@ let startTime = null;
 let elapsedSeconds = 0;
 let isTimerRunning = false;
 
-let isTransitioning = false;
 let isKeyboardVisible = true;
+
+// 한글 IME 2중 엔터 및 잔여 음절 누출 차단 가드
+let isSubmittingSentence = false;
+let isComposingLocked = false;
 
 /* =====================================================================
    4. DOM 요소
@@ -112,10 +115,11 @@ const modeBtns = document.querySelectorAll(".mode-btn");
 const subMenuBar = document.getElementById("sub-menu-bar");
 const subBtns = document.querySelectorAll(".sub-btn");
 
-const timeM1 = document.getElementById("time-m1");
-const timeM2 = document.getElementById("time-m2");
-const timeS1 = document.getElementById("time-s1");
-const timeS2 = document.getElementById("time-s2");
+// 오도미터 4개 슬롯
+const slotM1 = document.getElementById("slot-m1");
+const slotM2 = document.getElementById("slot-m2");
+const slotS1 = document.getElementById("slot-s1");
+const slotS2 = document.getElementById("slot-s2");
 
 const cpmDisplay = document.getElementById("cpm-display");
 const accuracyDisplay = document.getElementById("accuracy-display");
@@ -123,11 +127,14 @@ const progressPercent = document.getElementById("progress-percent");
 const progressBar = document.getElementById("progress-bar");
 
 const practiceBoard = document.getElementById("practice-board");
-const currentSection = document.getElementById("current-section");
+const slotCurrent = document.getElementById("slot-current");
+const slotNext = document.getElementById("slot-next");
+const slotAfter = document.getElementById("slot-after");
+
 const targetDisplay = document.getElementById("target-display");
 const userDisplay = document.getElementById("user-display");
-const nextSection = document.getElementById("next-section");
 const nextDisplay = document.getElementById("next-display");
+const afterDisplay = document.getElementById("after-display");
 const typingInput = document.getElementById("typing-input");
 
 const keyboardWrapper = document.getElementById("keyboard-wrapper");
@@ -140,7 +147,9 @@ const finalTime = document.getElementById("final-time");
 const restartBtn = document.getElementById("restart-btn");
 
 /* =====================================================================
-   5. 시간 및 타이머 제어 함수
+   5. 시간 제어 및 dayoffdev 스타일 듀얼 롤링 넘버 (WAAPI 기반)
+   - 이전 숫자는 위로 쑥 퇴장 (0% -> -100%)
+   - 새 숫자는 아래에서 위로 쑥 진입 (100% -> 0%)
    ===================================================================== */
 function formatTime(seconds) {
   const m = Math.floor(seconds / 60).toString().padStart(2, "0");
@@ -148,13 +157,46 @@ function formatTime(seconds) {
   return `${m}:${s}`;
 }
 
-function updateDigit(element, nextVal) {
-  if (element.textContent !== nextVal) {
-    element.textContent = nextVal;
-    element.classList.remove("time-slide-up");
-    void element.offsetWidth;
-    element.classList.add("time-slide-up");
+function updateDigitRoll(boxEl, nextChar) {
+  const currentEl = boxEl.querySelector(".digit-val:not(.leaving)");
+  if (!currentEl) {
+    boxEl.innerHTML = `<span class="digit-val">${nextChar}</span>`;
+    return;
   }
+  if (currentEl.textContent === nextChar) return;
+
+  currentEl.classList.add("leaving");
+
+  const nextEl = document.createElement("span");
+  nextEl.className = "digit-val";
+  nextEl.textContent = nextChar;
+  boxEl.appendChild(nextEl);
+
+  // 이전 숫자는 위로 슬라이드 아웃
+  currentEl.animate([
+    { transform: "translateY(0%)" },
+    { transform: "translateY(-100%)" }
+  ], {
+    duration: 320,
+    easing: "cubic-bezier(0.25, 1, 0.5, 1)",
+    fill: "forwards"
+  });
+
+  // 새 숫자는 아래에서 위로 슬라이드 인
+  const enterAnim = nextEl.animate([
+    { transform: "translateY(100%)" },
+    { transform: "translateY(0%)" }
+  ], {
+    duration: 320,
+    easing: "cubic-bezier(0.25, 1, 0.5, 1)",
+    fill: "forwards"
+  });
+
+  enterAnim.onfinish = () => {
+    if (currentEl.parentNode === boxEl) {
+      boxEl.removeChild(currentEl);
+    }
+  };
 }
 
 function startTimer() {
@@ -173,10 +215,10 @@ function startTimer() {
     const s1 = Math.floor(curS / 10).toString();
     const s2 = (curS % 10).toString();
 
-    updateDigit(timeM1, m1);
-    updateDigit(timeM2, m2);
-    updateDigit(timeS1, s1);
-    updateDigit(timeS2, s2);
+    updateDigitRoll(slotM1, m1);
+    updateDigitRoll(slotM2, m2);
+    updateDigitRoll(slotS1, s1);
+    updateDigitRoll(slotS2, s2);
   }, 200);
 }
 
@@ -191,9 +233,8 @@ function stopTimer() {
 function resetTimer() {
   stopTimer();
   elapsedSeconds = 0;
-  [timeM1, timeM2, timeS1, timeS2].forEach((el) => {
-    el.textContent = "0";
-    el.classList.remove("time-slide-up");
+  [slotM1, slotM2, slotS1, slotS2].forEach((slot) => {
+    slot.innerHTML = '<span class="digit-val">0</span>';
   });
 }
 
@@ -243,10 +284,9 @@ function updateStats() {
 }
 
 /* =====================================================================
-   7. 게임 제어 및 화면 렌더링
+   7. 게임 제어 및 상하 3단 컨베이어 렌더링
    ===================================================================== */
 function initPractice() {
-  isTransitioning = false;
   resetTimer();
 
   if (currentMode === "key") {
@@ -271,8 +311,8 @@ function initPractice() {
   totalCompletedTime = 0;
   cpmDisplay.textContent = "0";
 
-  currentSection.classList.remove("flow-up-exit", "flow-up-enter");
-  nextDisplay.classList.remove("next-flow-in");
+  isSubmittingSentence = false;
+  isComposingLocked = false;
 
   typingInput.value = "";
   practiceBoard.classList.remove("input-error");
@@ -298,7 +338,7 @@ function renderBoard() {
   const target = activeList[currentIndex] || "";
   const currentInput = typingInput.value;
 
-  // 상단: 현재 문제 문장
+  // 1단: 당장 입력할 문장
   targetDisplay.innerHTML = "";
   for (let i = 0; i < target.length; i++) {
     const span = document.createElement("span");
@@ -307,7 +347,7 @@ function renderBoard() {
     targetDisplay.appendChild(span);
   }
 
-  // 상단: 바로 밑 사용자 입력 줄
+  // 1단: 바로 밑 1:1 수직 일치 입력창
   userDisplay.innerHTML = "";
   for (let i = 0; i < currentInput.length; i++) {
     const span = document.createElement("span");
@@ -326,22 +366,34 @@ function renderBoard() {
   cursor.textContent = "|";
   userDisplay.appendChild(cursor);
 
-  // 하단: 다음에 나올 문장 미리보기 (라벨 없이 순수 텍스트)
+  // 2단: 그 다음 입력할 문장
   if (currentIndex + 1 < activeList.length) {
     nextDisplay.textContent = activeList[currentIndex + 1];
+    slotNext.style.display = "block";
   } else {
     nextDisplay.textContent = "마지막 문장입니다.";
+    slotNext.style.display = "block";
+  }
+
+  // 3단: 그 다음다음 입력할 문장 (더 쪼그맣게)
+  if (currentIndex + 2 < activeList.length) {
+    afterDisplay.textContent = activeList[currentIndex + 2];
+    slotAfter.style.display = "block";
+  } else {
+    afterDisplay.textContent = "";
+    slotAfter.style.display = "none";
   }
 }
 
-// 위-아래 구조 전환 슬라이드 애니메이션 (아래에서 위로 상승)
+// 아래에서 위로만 직진하며 글자 크기까지 자연스럽게 모핑되는 무지연 트랜지션
 function handleNext() {
-  if (isTransitioning) return;
-  isTransitioning = true;
+  isSubmittingSentence = true;
+  isComposingLocked = true;
 
-  const targetText = activeList[currentIndex];
-  const currentInput = typingInput.value;
+  const targetText = activeList[currentIndex] || "";
+  const currentInput = typingInput.value || "";
 
+  // 타수 통계 집계
   if (sentenceStartTime) {
     const sentenceDuration = (Date.now() - sentenceStartTime) / 1000;
     totalCompletedTime += sentenceDuration;
@@ -360,45 +412,81 @@ function handleNext() {
     }
   }
 
-  // 1단계: 현재 구역이 위로 떠오르며 퇴장
-  currentSection.classList.remove("flow-up-enter");
-  currentSection.classList.add("flow-up-exit");
+  // 1. 완료된 이전 문장을 복제하여 위로 부드럽게 퇴장시킴 (Ghost Track)
+  const ghost = slotCurrent.cloneNode(true);
+  ghost.style.position = "absolute";
+  ghost.style.top = slotCurrent.offsetTop + "px";
+  ghost.style.left = slotCurrent.offsetLeft + "px";
+  ghost.style.width = slotCurrent.offsetWidth + "px";
+  ghost.style.pointerEvents = "none";
+  ghost.style.zIndex = "10";
+  practiceBoard.appendChild(ghost);
 
+  ghost.animate([
+    { transform: "translateY(0px)", opacity: 1 },
+    { transform: "translateY(-32px)", opacity: 0 }
+  ], {
+    duration: 260,
+    easing: "cubic-bezier(0.25, 1, 0.5, 1)"
+  }).onfinish = () => {
+    if (ghost.parentNode) ghost.remove();
+  };
+
+  // 2. 실제 요소 간 Y 거리 측정
+  const dist1 = slotNext.offsetTop - slotCurrent.offsetTop;
+  const dist2 = slotAfter.style.display !== "none" ? (slotAfter.offsetTop - slotNext.offsetTop) : 28;
+
+  // 3. 지연 없이 인덱스 전진 및 인풋 초기화
+  currentIndex++;
+  sentenceStartTime = null;
+  currentSentenceStrokes = 0;
   typingInput.value = "";
   userDisplay.innerHTML = '<span class="blinking-cursor">|</span>';
-  typingInput.blur();
 
-  // 2단계: 200ms 후 인덱스 증가 및 새 문장 부드러운 상승 진입
+  // 한글 IME 잔여 음절 누출 차단 플러시
+  requestAnimationFrame(() => {
+    typingInput.value = "";
+  });
   setTimeout(() => {
-    currentIndex++;
-    sentenceStartTime = null;
-    currentSentenceStrokes = 0;
+    isComposingLocked = false;
+    isSubmittingSentence = false;
+  }, 50);
 
-    if (currentIndex >= activeList.length) {
-      finishPractice();
-      isTransitioning = false;
-      return;
-    }
+  if (currentIndex >= activeList.length) {
+    finishPractice();
+    return;
+  }
 
-    renderBoard();
-    updateStats();
+  // 4. 새로운 문장으로 즉시 렌더링
+  renderBoard();
+  updateStats();
 
-    // 상단에 새 문제가 아래에서 자연스럽게 올라와 착지
-    currentSection.classList.remove("flow-up-exit");
-    currentSection.classList.add("flow-up-enter");
+  // 5. 다음 문장들이 이전 자리에서 정확히 시작하여 위로 부드럽게 상승 (모핑 효과)
+  slotCurrent.animate([
+    { transform: `translateY(${dist1}px) scale(0.8)`, transformOrigin: "left top", opacity: 0.7 },
+    { transform: "translateY(0px) scale(1)", transformOrigin: "left top", opacity: 1 }
+  ], {
+    duration: 260,
+    easing: "cubic-bezier(0.25, 1, 0.5, 1)"
+  });
 
-    // 하단에는 새로운 다음 문장이 아래에서 은은하게 등장
-    nextDisplay.classList.remove("next-flow-in");
-    void nextDisplay.offsetWidth;
-    nextDisplay.classList.add("next-flow-in");
+  slotNext.animate([
+    { transform: `translateY(${dist2}px) scale(0.8)`, transformOrigin: "left top", opacity: 0.4 },
+    { transform: "translateY(0px) scale(1)", transformOrigin: "left top", opacity: 0.7 }
+  ], {
+    duration: 260,
+    easing: "cubic-bezier(0.25, 1, 0.5, 1)"
+  });
 
-    setTimeout(() => {
-      currentSection.classList.remove("flow-up-enter");
-      nextDisplay.classList.remove("next-flow-in");
-      typingInput.focus();
-      isTransitioning = false;
-    }, 280);
-  }, 200);
+  if (slotAfter.style.display !== "none") {
+    slotAfter.animate([
+      { transform: "translateY(20px)", opacity: 0 },
+      { transform: "translateY(0px)", opacity: 0.4 }
+    ], {
+      duration: 260,
+      easing: "cubic-bezier(0.25, 1, 0.5, 1)"
+    });
+  }
 }
 
 function finishPractice() {
@@ -407,6 +495,7 @@ function finishPractice() {
   targetDisplay.textContent = "연습 완료!";
   userDisplay.innerHTML = "";
   nextDisplay.textContent = "";
+  afterDisplay.textContent = "";
 
   const acc = pastAttemptedChars > 0 ? Math.round((pastCorrectChars / pastAttemptedChars) * 100) : 100;
   const totalDuration = Math.max(totalCompletedTime, 1);
@@ -426,22 +515,22 @@ function triggerInputError() {
 }
 
 /* =====================================================================
-   8. 입력 감지 및 키 제어
+   8. 입력 감지 및 키 제어 (무중단 0ms 반응 & 한글 IME 누출 방지)
    ===================================================================== */
 practiceBoard.addEventListener("click", () => {
   typingInput.focus();
 });
 
 typingInput.addEventListener("compositionend", () => {
-  if (isTransitioning) {
+  if (isComposingLocked) {
     typingInput.value = "";
-    renderBoard();
-    updateStats();
+    userDisplay.innerHTML = '<span class="blinking-cursor">|</span>';
   }
 });
 
 typingInput.addEventListener("input", () => {
-  if (isTransitioning) {
+  // 전환 시 이전 문장의 마지막 조합 음절이 새 입력창으로 튀어나오는 것 차단
+  if (isComposingLocked) {
     typingInput.value = "";
     return;
   }
@@ -493,16 +582,20 @@ typingInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter" || e.keyCode === 13) {
     e.preventDefault();
 
-    if (isTransitioning) return;
+    // IME가 엔터로 조합을 끝낼 때 브라우저가 엔터 이벤트를 2번 연속 날리는 현상 차단
+    if (isSubmittingSentence) return;
 
     if (currentMode !== "key") {
-      const targetText = activeList[currentIndex];
-      const currentInput = typingInput.value;
+      const targetText = activeList[currentIndex] || "";
+      const currentInput = typingInput.value || "";
 
-      if (currentInput.length === targetText.length) {
+      // 글자 수 일치 또는 문장 일치 검증
+      if (currentInput.length === targetText.length || currentInput.trim() === targetText.trim()) {
         handleNext();
       } else {
-        triggerInputError();
+        if (currentInput.length > 0) {
+          triggerInputError();
+        }
       }
     }
   }
