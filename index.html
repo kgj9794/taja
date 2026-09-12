@@ -19,11 +19,10 @@
           <button class="mode-btn" data-mode="long">장문연습</button>
         </nav>
       </div>
-      <!-- 키보드 온/오프 토글 버튼 -->
       <button id="toggle-keyboard-btn" class="keyboard-toggle-btn">⌨️ 키보드 숨기기</button>
     </header>
 
-    <!-- 자리연습 전용 세부 메뉴 -->
+    <!-- 자리연습 서브 메뉴 -->
     <div id="sub-menu-bar" class="sub-menu-bar">
       <button class="sub-btn active" data-pos="base">기본자리</button>
       <button class="sub-btn" data-pos="left-top">왼손윗자리</button>
@@ -35,7 +34,7 @@
       <button class="sub-btn" data-pos="number">숫자자리</button>
     </div>
 
-    <!-- 상태 대시보드 (상단: 진행시간, 타수, 정확도 / 하단: 진행도) -->
+    <!-- 상태 대시보드 -->
     <section class="dashboard">
       <div class="stat-card">
         <span class="stat-label">진행 시간</span>
@@ -58,7 +57,6 @@
         </div>
       </div>
 
-      <!-- 하단 전체 너비 진행도 -->
       <div class="stat-card progress-card">
         <div class="progress-info">
           <span class="stat-label">진행도</span>
@@ -70,27 +68,17 @@
       </div>
     </section>
 
-    <!-- 타자 연습 입력 영역 -->
+    <!-- 타자 연습 영역 (HTML 내부 공백 원천 차단) -->
     <main class="practice-area">
-      <div class="display-card">
-        <div id="target-display" class="target-display"></div>
-      </div>
-
-      <div class="input-wrapper">
-        <input 
-          type="text" 
-          id="typing-input" 
-          class="typing-input" 
-          placeholder="여기를 클릭하고 입력을 시작하세요..." 
-          autocomplete="off" 
-          spellcheck="false"
-        >
+      <div id="practice-board" class="practice-board">
+        <div class="text-line target-line"><div id="target-display" class="line-content"></div></div>
+        <div class="text-line input-line"><div id="user-display" class="line-content"></div></div>
+        <input type="text" id="typing-input" class="hidden-input" autocomplete="off" spellcheck="false">
       </div>
     </main>
 
-    <!-- 화면 하단 가상 키보드 레이아웃 -->
+    <!-- 가상 키보드 -->
     <div id="keyboard-wrapper" class="keyboard-wrapper">
-      <!-- 1행: 숫자 및 특수문자 -->
       <div class="key-row">
         <div class="key" data-code="Backquote"><span>~</span><span>`</span></div>
         <div class="key" data-code="Digit1"><span>!</span><span>1</span></div>
@@ -108,7 +96,6 @@
         <div class="key key-backspace" data-code="Backspace">Backspace</div>
       </div>
 
-      <!-- 2행: ㅂㅈㄷㄱㅅ/QWERTY -->
       <div class="key-row">
         <div class="key key-tab" data-code="Tab">Tab</div>
         <div class="key" data-code="KeyQ"><span class="ko">ㅃ/ㅂ</span><span class="en">Q</span></div>
@@ -126,7 +113,6 @@
         <div class="key key-backslash" data-code="Backslash"><span>|</span><span>\</span></div>
       </div>
 
-      <!-- 3행: ㅁㄴㅇㄹㅎ -->
       <div class="key-row">
         <div class="key key-caps" data-code="CapsLock">Caps</div>
         <div class="key" data-code="KeyA"><span class="ko">ㅁ</span><span class="en">A</span></div>
@@ -143,7 +129,6 @@
         <div class="key key-enter" data-code="Enter">Enter</div>
       </div>
 
-      <!-- 4행: ㅋㅌㅊㅍㅠ -->
       <div class="key-row">
         <div class="key key-shift" data-code="ShiftLeft">Shift</div>
         <div class="key" data-code="KeyZ"><span class="ko">ㅋ</span><span class="en">Z</span></div>
@@ -159,7 +144,6 @@
         <div class="key key-shift" data-code="ShiftRight">Shift</div>
       </div>
 
-      <!-- 5행: 스페이스바 -->
       <div class="key-row">
         <div class="key key-space" data-code="Space">Space</div>
       </div>
