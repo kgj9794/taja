@@ -13,12 +13,58 @@
     <p class="loading-text">접속하는 중..</p>
   </div>
 
-  <!-- 메인 컨테이너 -->
-  <div id="typing-container" class="typing-container fade-init">
-    <!-- 상단 헤더 및 모드 선택 -->
+  <!-- 메인 모드 선택 로비 화면 (최초 접속 시 표시) -->
+  <div id="lobby-screen" class="lobby-container fade-init">
+    <div class="lobby-header">
+      <h1 class="lobby-logo">한컴스타일 타자연습</h1>
+      <p class="lobby-sub">시작할 연습 모드를 선택하세요</p>
+    </div>
+
+    <div class="mode-card-grid">
+      <!-- 1. 자리연습 -->
+      <button class="mode-card" data-mode="key">
+        <div class="card-icon">⌨️</div>
+        <div class="card-content">
+          <h2 class="card-title">자리연습</h2>
+          <p class="card-desc">기본자리부터 손가락별 키보드 위치를 익힙니다.</p>
+        </div>
+      </button>
+
+      <!-- 2. 낱말연습 -->
+      <button class="mode-card" data-mode="word">
+        <div class="card-icon">📝</div>
+        <div class="card-content">
+          <h2 class="card-title">낱말연습</h2>
+          <p class="card-desc">자주 쓰이는 기초 단어를 빠르게 타이핑합니다.</p>
+        </div>
+      </button>
+
+      <!-- 3. 단문연습 -->
+      <button class="mode-card" data-mode="short">
+        <div class="card-icon">⚡</div>
+        <div class="card-content">
+          <h2 class="card-title">단문연습</h2>
+          <p class="card-desc">100개의 재미있는 밈과 명언을 무작위로 연습합니다.</p>
+        </div>
+      </button>
+
+      <!-- 4. 장문연습 -->
+      <button class="mode-card" data-mode="long">
+        <div class="card-icon">📜</div>
+        <div class="card-content">
+          <h2 class="card-title">장문연습</h2>
+          <p class="card-desc">긴 호흡의 문학 명작 전문을 완독하며 연습합니다.</p>
+        </div>
+      </button>
+    </div>
+  </div>
+
+  <!-- 메인 타자연습 컨테이너 (모드 선택 시 활성화) -->
+  <div id="typing-container" class="typing-container hidden">
+    <!-- 상단 헤더 및 모드 선택 네비게이션 -->
     <header>
       <div class="header-left">
-        <h1 class="logo">한컴스타일 타자연습</h1>
+        <h1 class="logo clickable" id="home-logo" title="메인 메뉴로 돌아가기">한컴스타일 타자연습</h1>
         <nav class="mode-nav">
           <button class="mode-btn active" data-mode="key">자리연습</button>
           <button class="mode-btn" data-mode="word">낱말연습</button>
@@ -26,7 +72,10 @@
           <button class="mode-btn" data-mode="long">장문연습</button>
         </nav>
       </div>
-      <button id="toggle-keyboard-btn" class="keyboard-toggle-btn">⌨️ 키보드 숨기기</button>
+      <div class="header-right">
+        <button id="lobby-back-btn" class="header-action-btn">🏠 메뉴로</button>
+        <button id="toggle-keyboard-btn" class="header-action-btn">⌨️ 키보드 숨기기</button>
+      </div>
     </header>
 
     <!-- 자리연습 세부 메뉴 -->
@@ -41,7 +90,21 @@
       <button class="sub-btn" data-pos="number">숫자자리</button>
     </div>
 
-    <!-- 대시보드 (오도미터 롤링 타임) -->
+    <!-- 장문연습 전문 완독 선택 메뉴 -->
+    <div id="song-select-bar" class="sub-menu-bar song-select-bar" style="display: none;">
+      <label for="song-select" class="song-select-label">📜 장문 완독 선택:</label>
+      <div class="select-wrapper">
+        <select id="song-select" class="song-select">
+          <option value="stars">윤동주 - 별 헤는 밤 (전문 완독본)</option>
+          <option value="silence">한용운 - 님의 침묵 (전문 완독본)</option>
+          <option value="azalea">김소월 - 진달래꽃 (전문 완독본)</option>
+          <option value="nostalgia">정지용 - 향수 (전문 완독본)</option>
+          <option value="wings">이상 - 날개 (도입부 전문 완독본)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 대시보드 (오도미터 듀얼 롤링 넘버) -->
     <section class="dashboard">
       <div class="stat-card">
         <span class="stat-label">진행 시간</span>
@@ -81,9 +144,15 @@
       </div>
     </section>
 
-    <!-- 타자 연습 영역 (상하 3단 컨베이어 피드) -->
+    <!-- 타자 연습 영역 (상하 3단 컨베이어 피드 + 3초 카운트다운) -->
     <main class="practice-area">
       <div id="practice-board" class="practice-board">
+        <!-- 3초 카운트다운 오버레이 -->
+        <div id="countdown-overlay" class="countdown-overlay hidden">
+          <div id="countdown-number" class="countdown-number">3</div>
+          <p id="countdown-sub" class="countdown-sub">잠시 후 연습이 시작됩니다</p>
+        </div>
+
         <!-- 1단: 당장 입력해야 할 문장 (문제 + 1:1 수직 밀착 입력창) -->
         <div class="sentence-slot slot-current" id="slot-current">
           <div class="text-line target-line">
@@ -198,7 +267,10 @@
             <span class="result-val"><strong id="final-time">00:00</strong></span>
           </div>
         </div>
-        <button id="restart-btn" class="restart-btn">다시 시작하기</button>
+        <div class="modal-btn-group">
+          <button id="modal-lobby-btn" class="modal-sub-btn">메인 메뉴</button>
+          <button id="restart-btn" class="restart-btn">다시 시작하기</button>
+        </div>
       </div>
     </div>
   </div>
