@@ -1,6 +1,10 @@
 /* =====================================================================
-   1. 한글 음소 분해 및 실시간 타수(Stroke) 계산 모듈
+   1. 한글 음소 분해 및 유효 순타수(Net Strokes) 정밀 계산 모듈
    ===================================================================== */
+const CHO_LIST = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
+const JUNG_LIST = ['ㅏ', 'ㅐ', 'ㅑ', 'ㅒ', 'ㅓ', 'ㅔ', 'ㅕ', 'ㅖ', 'ㅗ', 'ㅘ', 'ㅙ', 'ㅚ', 'ㅛ', 'ㅜ', 'ㅝ', 'ㅞ', 'ㅟ', 'ㅠ', 'ㅡ', 'ㅢ', 'ㅣ'];
+const JONG_LIST = ['', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', 'ㄶ', 'ㄷ', 'ㄹ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
+
 const CHO_STROKES = [1, 2, 1, 1, 2, 1, 1, 1, 2, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1];
 const JUNG_STROKES = [1, 2, 2, 3, 1, 2, 2, 3, 1, 2, 3, 2, 2, 1, 2, 3, 2, 2, 1, 2, 1];
 const JONG_STROKES = [
@@ -29,16 +33,77 @@ function getCharStrokes(char) {
   return 1;
 }
 
-function getStringStrokes(str) {
-  let strokes = 0;
-  for (let i = 0; i < str.length; i++) {
-    strokes += getCharStrokes(str[i]);
+function decomposeChar(char) {
+  if (!char) return [];
+  const code = char.charCodeAt(0);
+
+  if (code >= 0xAC00 && code <= 0xD7A3) {
+    const syllableIndex = code - 0xAC00;
+    const jong = syllableIndex % 28;
+    const jung = Math.floor((syllableIndex - jong) / 28) % 21;
+    const cho = Math.floor(Math.floor((syllableIndex - jong) / 28) / 21);
+
+    const parts = [
+      { type: 'cho', idx: cho, stroke: CHO_STROKES[cho] },
+      { type: 'jung', idx: jung, stroke: JUNG_STROKES[jung] }
+    ];
+    if (jong > 0) {
+      parts.push({ type: 'jong', idx: jong, stroke: JONG_STROKES[jong] });
+    }
+    return parts;
   }
-  return strokes;
+
+  const choIdx = CHO_LIST.indexOf(char);
+  if (choIdx !== -1) {
+    return [{ type: 'cho', idx: choIdx, stroke: CHO_STROKES[choIdx] }];
+  }
+  const jungIdx = JUNG_LIST.indexOf(char);
+  if (jungIdx !== -1) {
+    return [{ type: 'jung', idx: jungIdx, stroke: JUNG_STROKES[jungIdx] }];
+  }
+
+  return [{ type: 'other', char: char, stroke: getCharStrokes(char) }];
+}
+
+// 오타를 제외하고 올바르게 친 순타수만 계산
+function getValidStrokeCount(targetText, input) {
+  if (!targetText || !input) return 0;
+  let validStrokes = 0;
+  const compareLen = Math.min(targetText.length, input.length);
+
+  for (let i = 0; i < compareLen; i++) {
+    const tChar = targetText[i];
+    const iChar = input[i];
+
+    if (tChar === iChar) {
+      validStrokes += getCharStrokes(tChar);
+    } else if (i === input.length - 1) {
+      const tParts = decomposeChar(tChar);
+      const iParts = decomposeChar(iChar);
+
+      for (let j = 0; j < iParts.length; j++) {
+        if (j < tParts.length && tParts[j].type === iParts[j].type && tParts[j].idx === iParts[j].idx) {
+          validStrokes += iParts[j].stroke;
+        } else {
+          break;
+        }
+      }
+    }
+  }
+  return validStrokes;
+}
+
+function parseMultiline(text) {
+  return text
+    .split("\n")
+    .map(line => line.trim())
+    .filter(line => line.length > 0);
 }
 
 /* =====================================================================
    2. 연습 데이터 세트
+   - 단문: 100개 밈·명대사 (매번 무작위 7개 출제)
+   - 장문: 대표 명문 전문 완독본
    ===================================================================== */
 const PRACTICE_DATA = {
   key: {
@@ -55,25 +120,199 @@ const PRACTICE_DATA = {
     "하늘", "바람", "구름", "나무", "바다", "태양", "달빛", "별빛", "마음", "사랑",
     "컴퓨터", "키보드", "모니터", "인터넷", "소프트웨어", "프로그래밍", "자바스크립트", "알고리즘", "데이터", "네트워크"
   ],
+  // 100개의 밈, 명언, 유행어 목록
   short: [
-    "동해 물과 백두산이 마르고 닳도록",
-    "남산 위에 저 소나무 철갑을 두른 듯",
-    "가을 하늘 공활한데 높고 구름 없이",
-    "이 기상과 이 맘으로 충성을 다하여",
-    "가는 말이 고와야 오는 말이 곱다",
-    "말 한마디로 천 냥 빚을 갚는다",
+    "중요한 것은 꺾이지 않는 마음",
+    "중요한 건 꺾였는데도 그냥 하는 마음",
+    "오히려 좋아 가보자고",
+    "폼 미쳤다 진짜 레전드네",
+    "알아서 잘 딱 깔끔하고 센스있게",
+    "어쩔티비 저쩔티비 안물티비 안궁티비",
+    "내 뼈 그만 때려 순살 되겠어",
+    "이게 무슨 일이야 이렇게 좋은 날에",
+    "당황하지 않고 자연스럽게 넘어가기",
+    "내 안에 잠든 흑염룡이 깨어난다",
+    "맑은 눈의 광인 그 자체",
+    "멈춰 학교폭력 멈춰",
+    "가보자고 인생 뭐 있어 직진이야",
+    "돈 많은 백수가 되고 싶다",
+    "월급은 통장을 스쳐 지나갈 뿐",
+    "퇴근하고 싶다 격렬하게 퇴근하고 싶다",
+    "네가 왜 거기서 나와",
+    "호의가 계속되면 권리인 줄 안다",
+    "피할 수 없으면 즐겨라",
+    "인생은 실전이야 종만아",
+    "묻고 더블로 가",
+    "내가 왕이 될 상인가",
+    "어디서 타는 냄새 안 나요 내 심장이 불타고 있잖아요",
+    "소년이여 야망을 품어라",
+    "오늘 걷지 않으면 내일은 뛰어야 한다",
+    "늦었다고 생각할 때가 진짜 너무 늦었다",
+    "티끌 모아 태산이 아니라 티끌 모아 티끌이다",
+    "포기하면 편해 하지만 다시 일어나야지",
+    "너 자신을 알라",
+    "이 또한 지나가리라",
+    "내일은 내일의 태양이 뜬다",
+    "아무것도 안 했는데 벌써 이 시간이야",
+    "오늘 먹을 치킨을 내일로 미루지 말라",
+    "맛있게 먹으면 0칼로리",
+    "인생은 타이밍과 추진력이다",
+    "완전 럭키비키잖아",
+    "이게 바로 원영적 사고",
+    "중꺾마 정신으로 버티는 거야",
+    "기출변형에 당황하지 마라",
+    "사람은 서울로 가고 말은 제주도로 가야 한다",
+    "침대는 과학입니다",
+    "인생은 짧고 예술은 길다",
+    "아는 것이 힘이다",
+    "천 리 길도 한 걸음부터",
+    "고생 끝에 낙이 온다",
     "시작이 반이다",
-    "티끌 모아 태산이다"
+    "백지장도 맞들면 낫다",
+    "콩 심은 데 콩 나고 팥 심은 데 팥 난다",
+    "발 없는 말이 천 리 간다",
+    "낮말은 새가 듣고 밤말은 쥐가 듣는다",
+    "가는 말이 고와야 오는 말이 곱다",
+    "웃는 얼굴에 침 못 뱉는다",
+    "세 살 버릇 여든까지 간다",
+    "티끌 모아 로또 산다",
+    "아침 일찍 일어나는 새가 피곤하다",
+    "일찍 일어나는 벌레는 새한테 잡힌다",
+    "남의 떡이 더 커 보인다",
+    "벼는 익을수록 고개를 숙인다",
+    "호랑이도 제 말 하면 온다",
+    "쇠뿔도 단김에 빼라",
+    "얌전한 고양이가 부뚜막에 먼저 올라간다",
+    "등잔 밑이 어둡다",
+    "뱁새가 황새 따라가다 가랑이 찢어진다",
+    "원숭이도 나무에서 떨어진다",
+    "금강산도 식후경",
+    "우물 안 개구리",
+    "하늘이 무너져도 솟아날 구멍은 있다",
+    "구슬이 서 말이라도 꿰어야 보배",
+    "길고 짧은 것은 대봐야 안다",
+    "닭 쫓던 개 지붕 쳐다본다",
+    "똥 묻은 개가 겨 묻은 개 나무란다",
+    "보기 좋은 떡이 먹기도 좋다",
+    "수박 겉핥기",
+    "십 년이면 강산도 변한다",
+    "아니 땐 굴뚝에 연기 날까",
+    "옥에 티",
+    "작심삼일도 열 번이면 한 달이다",
+    "재주가 많은 사람은 배가 고프다",
+    "쥐구멍에도 볕 들 날 있다",
+    "짚신도 짝이 있다",
+    "칼로 물 베기",
+    "하룻강아지 범 무서운 줄 모른다",
+    "간에 기별도 안 간다",
+    "개천에서 용 난다",
+    "걱정도 팔자다",
+    "고래 싸움에 새우 등 터진다",
+    "공든 탑이 무너지랴",
+    "꿩 대신 닭",
+    "누워서 침 뱉기",
+    "달면 삼키고 쓰면 뱉는다",
+    "도토리 키 재기",
+    "땅 짚고 헤엄치기",
+    "말 한마디로 천 냥 빚을 갚는다",
+    "매도 먼저 맞는 게 낫다",
+    "바늘 도둑이 소 도둑 된다",
+    "배보다 배꼽이 더 크다",
+    "빈 수레가 더 요란하다",
+    "사공이 많으면 배가 산으로 간다",
+    "소 잃고 외양간 고친다",
+    "열 번 찍어 안 넘어가는 나무 없다"
   ],
-  long: [
-    "별 하나에 추억과 별 하나에 사랑과 별 하나에 쓸쓸함과",
-    "별 하나에 동경과 별 하나에 시와 별 하나에 어머니 어머니",
-    "어머님 나는 별 하나에 아름다운 말 한마디씩 불러 봅니다",
-    "소학교 때 책상을 같이 했던 아이들의 이름과",
-    "패 경 옥 이런 이국 소녀들의 이름과",
-    "비둘기 강아지 토끼 노새 노루 프랑시스 잼 도경환 이런 시인의 이름을 불러 봅니다",
-    "이네들은 너무나 멀리 있습니다 별이 아스라이 멀 듯이"
-  ]
+  // 장문 완독본 (전문 전체)
+  long: {
+    // 1. 윤동주 - 별 헤는 밤 (전문 완독본)
+    stars: parseMultiline(`
+      계절이 지나가는 하늘에는 가을로 가득 차 있습니다
+      나는 아무 걱정도 없이 가을 속의 별들을 다 헤일 듯합니다
+      가슴 속에 하나 둘 새겨지는 별을 이제 다 못 헤는 것은
+      쉬이 아침이 오는 까닭이요 내일 밤이 남은 까닭이요
+      아직 나의 청춘이 다하지 않은 까닭입니다
+      별 하나에 추억과 별 하나에 사랑과
+      별 하나에 쓸쓸함과 별 하나에 동경과
+      별 하나에 시와 별 하나에 어머니 어머니
+      어머님 나는 별 하나에 아름다운 말 한마디씩 불러 봅니다
+      소학교 때 책상을 같이 했던 아이들의 이름과
+      패 경 옥 이런 이국 소녀들의 이름과
+      비둘기 강아지 토끼 노새 노루 프랑시스 잼 도경환
+      이런 시인의 이름을 불러 봅니다
+      이네들은 너무나 멀리 있습니다 별이 아스라이 멀 듯이
+      어머님 그리고 당신은 멀리 북간도에 계십니다
+      나는 무엇인지 그리워 이 많은 별빛이 내린 언덕 위에
+      내 이름자를 써 보고 흙으로 덮어 버리었습니다
+      딴은 밤을 새워 우는 벌레는 부끄러운 이름을 슬퍼하는 까닭입니다
+      그러나 겨울이 지나고 나의 별에도 봄이 오면
+      무덤 위에 파란 풀이 피어나듯이
+      내 이름자 묻힌 언덕 위에도 자랑처럼 풀이 무성할 거외다
+    `),
+    // 2. 한용운 - 님의 침묵 (전문 완독본)
+    silence: parseMultiline(`
+      님은 갔습니다 아아 사랑하는 나의 님은 갔습니다
+      푸른 산빛을 깨치고 단풍나무 숲을 향하여 난 작은 길을 걸어서 차마 떨치고 갔습니다
+      황금의 꽃같이 굳고 빛나던 옛 맹세는 차디찬 티끌이 되어서 한숨의 미풍에 날아갔습니다
+      날카로운 첫 키스의 추억은 나의 운명의 지침을 돌려놓고 뒷걸음쳐서 사라졌습니다
+      나는 향기로운 님의 말소리에 귀먹고 꽃다운 님의 얼굴에 눈멀었습니다
+      사랑도 사람의 일이라 만날 때에 미리 떠날 것을 염려하고 경계하지 아니한 것은 아니지만
+      이별은 뜻밖의 일이 되고 놀란 가슴은 새로운 슬픔에 터집니다
+      그러나 이별을 쓸데없는 눈물의 원천을 만들고 마는 것은 스스로 사랑을 깨치는 것인 줄 아는 까닭에
+      걷잡을 수 없는 슬픔의 힘을 옮겨서 새 희망의 정수박이에 들어부었습니다
+      우리는 만날 때에 떠날 것을 염려하는 것과 같이 떠날 때에 다시 만날 것을 믿습니다
+      아아 님은 갔지마는 나는 님을 보내지 아니하였습니다
+      제 곡조를 못 이기는 사랑의 노래는 님의 침묵을 휩싸고 돕니다
+    `),
+    // 3. 김소월 - 진달래꽃 (전문 완독본)
+    azalea: parseMultiline(`
+      나 보기가 역겨워 가실 때에는
+      말없이 고이 보내 드리우리다
+      영변에 약산 진달래꽃
+      아름 따다 가실 길에 뿌리우리다
+      가시는 걸음 걸음 놓인 그 꽃을
+      사뿐히 즈려밟고 가시옵소서
+      나 보기가 역겨워 가실 때에는
+      죽어도 아니 눈물 흘리우리다
+    `),
+    // 4. 정지용 - 향수 (전문 완독본)
+    nostalgia: parseMultiline(`
+      넓은 벌 동쪽 끝으로 옛이야기 지줄대는 실개천이 휘돌아 나가고
+      얼룩백이 황소가 해설피 금빛 게으른 울음을 우는 곳
+      그곳이 차마 꿈엔들 잊힐 리야
+      질화로에 재가 식어지면 뷔인 밭에 밤바람 소리 말을 달리고
+      엷은 졸음에 겨운 늙으신 아버지가 짚베개를 돋아 고이시는 곳
+      그곳이 차마 꿈엔들 잊힐 리야
+      흙에서 자란 내 마음 파아란 하늘빛이 그리워
+      함부로 쏜 화살을 찾으려 풀섶 이슬에 함초롬 휘적시던 곳
+      그곳이 차마 꿈엔들 잊힐 리야
+      전설 바다에 춤추는 밤물결 같은 검은 귀밑머리 날리는 어린 누이와
+      아무렇지도 않고 예쁠 것도 없는 사철 발 벗은 아내가
+      따가운 햇살을 등에 지고 이삭 줍던 곳
+      그곳이 차마 꿈엔들 잊힐 리야
+      하늘에는 성근 별 알 수도 없는 모래성으로 발을 옮기고
+      서리 까마귀 우지짖고 지나가는 초라한 지붕
+      흐릿한 불빛에 돌아앉아 도란도란거리는 곳
+      그곳이 차마 꿈엔들 잊힐 리야
+    `),
+    // 5. 이상 - 날개 (도입부 전문 완독본)
+    wings: parseMultiline(`
+      박제가 되어버린 천재를 아시오 나는 유쾌하오
+      이런 때 연애까지가 유쾌하오
+      육신이 흐느적흐느적하도록 피로했을 때만 정신이 은화처럼 맑소
+      니코틴이 내 횟배 앓는 뱃속으로 스며들면
+      머릿속에 으레 백지가 한 장 펼쳐지오
+      그 위에다 나는 위트와 패러독스를 바둑 포석처럼 늘어놓소
+      가증할 상식의 병이오
+      나는 또 여인과 생활을 설계하오
+      연애기법에마저 서먹서먹하게 입술을 대어보는
+      극도로 세련된 예절을 닦아놓소
+      오직 내 기억의 도서관에서 발췌된 문맥만을 사랑하오
+      날개야 다시 돋아라
+      날자 날자 한 번만 더 날자꾸나
+      한 번만 더 날아보자꾸나
+    `)
+  }
 };
 
 /* =====================================================================
@@ -81,6 +320,7 @@ const PRACTICE_DATA = {
    ===================================================================== */
 let currentMode = "key";
 let currentSubPos = "base";
+let currentLongKey = "stars";
 let activeList = [];
 let currentIndex = 0;
 
@@ -100,22 +340,33 @@ let elapsedSeconds = 0;
 let isTimerRunning = false;
 
 let isKeyboardVisible = true;
-
-// 한글 IME 2중 엔터 및 잔여 음절 누출 차단 가드
 let isSubmittingSentence = false;
 let isComposingLocked = false;
+
+let countdownTimer = null;
+let isCountingDown = false;
 
 /* =====================================================================
    4. DOM 요소
    ===================================================================== */
 const loadingScreen = document.getElementById("loading-screen");
+const lobbyScreen = document.getElementById("lobby-screen");
 const typingContainer = document.getElementById("typing-container");
+const homeLogo = document.getElementById("home-logo");
+const lobbyBackBtn = document.getElementById("lobby-back-btn");
+const modalLobbyBtn = document.getElementById("modal-lobby-btn");
 
+const modeCards = document.querySelectorAll(".mode-card");
 const modeBtns = document.querySelectorAll(".mode-btn");
 const subMenuBar = document.getElementById("sub-menu-bar");
 const subBtns = document.querySelectorAll(".sub-btn");
+const songSelectBar = document.getElementById("song-select-bar");
+const songSelect = document.getElementById("song-select");
 
-// 오도미터 4개 슬롯
+const countdownOverlay = document.getElementById("countdown-overlay");
+const countdownNumber = document.getElementById("countdown-number");
+const countdownSub = document.getElementById("countdown-sub");
+
 const slotM1 = document.getElementById("slot-m1");
 const slotM2 = document.getElementById("slot-m2");
 const slotS1 = document.getElementById("slot-s1");
@@ -147,9 +398,7 @@ const finalTime = document.getElementById("final-time");
 const restartBtn = document.getElementById("restart-btn");
 
 /* =====================================================================
-   5. 시간 제어 및 dayoffdev 스타일 듀얼 롤링 넘버 (WAAPI 기반)
-   - 이전 숫자는 위로 쑥 퇴장 (0% -> -100%)
-   - 새 숫자는 아래에서 위로 쑥 진입 (100% -> 0%)
+   5. 시간 제어 및 dayoffdev 스타일 듀얼 롤링 넘버
    ===================================================================== */
 function formatTime(seconds) {
   const m = Math.floor(seconds / 60).toString().padStart(2, "0");
@@ -172,7 +421,6 @@ function updateDigitRoll(boxEl, nextChar) {
   nextEl.textContent = nextChar;
   boxEl.appendChild(nextEl);
 
-  // 이전 숫자는 위로 슬라이드 아웃
   currentEl.animate([
     { transform: "translateY(0%)" },
     { transform: "translateY(-100%)" }
@@ -182,7 +430,6 @@ function updateDigitRoll(boxEl, nextChar) {
     fill: "forwards"
   });
 
-  // 새 숫자는 아래에서 위로 슬라이드 인
   const enterAnim = nextEl.animate([
     { transform: "translateY(100%)" },
     { transform: "translateY(0%)" }
@@ -239,7 +486,7 @@ function resetTimer() {
 }
 
 /* =====================================================================
-   6. 정확도 실시간 계산 및 변동 애니메이션
+   6. 정확도 실시간 계산 모듈
    ===================================================================== */
 function getCurrentAccuracy() {
   const targetText = activeList[currentIndex] || "";
@@ -284,17 +531,103 @@ function updateStats() {
 }
 
 /* =====================================================================
-   7. 게임 제어 및 상하 3단 컨베이어 렌더링
+   7. 3초 카운트다운 오버레이 제어
    ===================================================================== */
+function triggerCountdown(onFinish) {
+  if (countdownTimer) {
+    clearInterval(countdownTimer);
+    countdownTimer = null;
+  }
+
+  isCountingDown = true;
+  typingInput.disabled = true;
+
+  countdownOverlay.classList.remove("hidden");
+  countdownOverlay.style.opacity = "1";
+
+  let count = 3;
+  countdownNumber.textContent = count;
+  countdownSub.textContent = "잠시 후 연습이 시작됩니다";
+
+  countdownNumber.classList.remove("pop");
+  void countdownNumber.offsetWidth;
+  countdownNumber.classList.add("pop");
+
+  countdownTimer = setInterval(() => {
+    count--;
+
+    if (count > 0) {
+      countdownNumber.textContent = count;
+      countdownNumber.classList.remove("pop");
+      void countdownNumber.offsetWidth;
+      countdownNumber.classList.add("pop");
+    } else if (count === 0) {
+      countdownNumber.textContent = "시작!";
+      countdownNumber.classList.remove("pop");
+      void countdownNumber.offsetWidth;
+      countdownNumber.classList.add("pop");
+    } else {
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+
+      countdownOverlay.style.opacity = "0";
+      setTimeout(() => {
+        countdownOverlay.classList.add("hidden");
+        isCountingDown = false;
+        typingInput.disabled = false;
+        ensureInputFocus();
+        if (onFinish) onFinish();
+      }, 200);
+    }
+  }, 900);
+}
+
+/* =====================================================================
+   8. 화면 전환 (로비 <-> 연습화면) 및 게임 제어
+   ===================================================================== */
+function showLobby() {
+  stopTimer();
+  if (countdownTimer) clearInterval(countdownTimer);
+
+  resultModal.classList.add("hidden");
+  typingContainer.classList.add("hidden");
+  lobbyScreen.classList.remove("hidden");
+  lobbyScreen.classList.add("fade-in");
+  typingInput.disabled = true;
+}
+
+function startMode(mode) {
+  currentMode = mode;
+  lobbyScreen.classList.add("hidden");
+  typingContainer.classList.remove("hidden");
+
+  modeBtns.forEach((b) => {
+    b.classList.toggle("active", b.dataset.mode === mode);
+  });
+
+  initPractice();
+}
+
 function initPractice() {
   resetTimer();
 
   if (currentMode === "key") {
     subMenuBar.style.display = "flex";
+    songSelectBar.style.display = "none";
     activeList = shuffle([...PRACTICE_DATA.key[currentSubPos]]);
+  } else if (currentMode === "long") {
+    subMenuBar.style.display = "none";
+    songSelectBar.style.display = "flex";
+    songSelect.value = currentLongKey;
+    activeList = [...PRACTICE_DATA.long[currentLongKey]];
+  } else if (currentMode === "short") {
+    subMenuBar.style.display = "none";
+    songSelectBar.style.display = "none";
+    activeList = shuffle([...PRACTICE_DATA.short]).slice(0, 7);
   } else {
     subMenuBar.style.display = "none";
-    activeList = [...PRACTICE_DATA[currentMode]];
+    songSelectBar.style.display = "none";
+    activeList = shuffle([...PRACTICE_DATA[currentMode]]);
   }
 
   currentIndex = 0;
@@ -316,13 +649,13 @@ function initPractice() {
 
   typingInput.value = "";
   practiceBoard.classList.remove("input-error");
-  typingInput.disabled = false;
   resultModal.classList.add("hidden");
 
   clearAllActiveKeys();
   renderBoard();
   updateStats();
-  typingInput.focus();
+
+  triggerCountdown();
 }
 
 function shuffle(array) {
@@ -338,7 +671,6 @@ function renderBoard() {
   const target = activeList[currentIndex] || "";
   const currentInput = typingInput.value;
 
-  // 1단: 당장 입력할 문장
   targetDisplay.innerHTML = "";
   for (let i = 0; i < target.length; i++) {
     const span = document.createElement("span");
@@ -347,7 +679,6 @@ function renderBoard() {
     targetDisplay.appendChild(span);
   }
 
-  // 1단: 바로 밑 1:1 수직 일치 입력창
   userDisplay.innerHTML = "";
   for (let i = 0; i < currentInput.length; i++) {
     const span = document.createElement("span");
@@ -366,16 +697,14 @@ function renderBoard() {
   cursor.textContent = "|";
   userDisplay.appendChild(cursor);
 
-  // 2단: 그 다음 입력할 문장
   if (currentIndex + 1 < activeList.length) {
     nextDisplay.textContent = activeList[currentIndex + 1];
     slotNext.style.display = "block";
   } else {
-    nextDisplay.textContent = "마지막 문장입니다.";
-    slotNext.style.display = "block";
+    nextDisplay.textContent = "";
+    slotNext.style.display = "none";
   }
 
-  // 3단: 그 다음다음 입력할 문장 (더 쪼그맣게)
   if (currentIndex + 2 < activeList.length) {
     afterDisplay.textContent = activeList[currentIndex + 2];
     slotAfter.style.display = "block";
@@ -385,7 +714,6 @@ function renderBoard() {
   }
 }
 
-// 아래에서 위로만 직진하며 글자 크기까지 자연스럽게 모핑되는 무지연 트랜지션
 function handleNext() {
   isSubmittingSentence = true;
   isComposingLocked = true;
@@ -393,7 +721,8 @@ function handleNext() {
   const targetText = activeList[currentIndex] || "";
   const currentInput = typingInput.value || "";
 
-  // 타수 통계 집계
+  currentSentenceStrokes = getValidStrokeCount(targetText, currentInput);
+
   if (sentenceStartTime) {
     const sentenceDuration = (Date.now() - sentenceStartTime) / 1000;
     totalCompletedTime += sentenceDuration;
@@ -412,7 +741,6 @@ function handleNext() {
     }
   }
 
-  // 1. 완료된 이전 문장을 복제하여 위로 부드럽게 퇴장시킴 (Ghost Track)
   const ghost = slotCurrent.cloneNode(true);
   ghost.style.position = "absolute";
   ghost.style.top = slotCurrent.offsetTop + "px";
@@ -432,18 +760,15 @@ function handleNext() {
     if (ghost.parentNode) ghost.remove();
   };
 
-  // 2. 실제 요소 간 Y 거리 측정
-  const dist1 = slotNext.offsetTop - slotCurrent.offsetTop;
+  const dist1 = slotNext.style.display !== "none" ? (slotNext.offsetTop - slotCurrent.offsetTop) : 48;
   const dist2 = slotAfter.style.display !== "none" ? (slotAfter.offsetTop - slotNext.offsetTop) : 28;
 
-  // 3. 지연 없이 인덱스 전진 및 인풋 초기화
   currentIndex++;
   sentenceStartTime = null;
   currentSentenceStrokes = 0;
   typingInput.value = "";
   userDisplay.innerHTML = '<span class="blinking-cursor">|</span>';
 
-  // 한글 IME 잔여 음절 누출 차단 플러시
   requestAnimationFrame(() => {
     typingInput.value = "";
   });
@@ -457,11 +782,9 @@ function handleNext() {
     return;
   }
 
-  // 4. 새로운 문장으로 즉시 렌더링
   renderBoard();
   updateStats();
 
-  // 5. 다음 문장들이 이전 자리에서 정확히 시작하여 위로 부드럽게 상승 (모핑 효과)
   slotCurrent.animate([
     { transform: `translateY(${dist1}px) scale(0.8)`, transformOrigin: "left top", opacity: 0.7 },
     { transform: "translateY(0px) scale(1)", transformOrigin: "left top", opacity: 1 }
@@ -470,13 +793,15 @@ function handleNext() {
     easing: "cubic-bezier(0.25, 1, 0.5, 1)"
   });
 
-  slotNext.animate([
-    { transform: `translateY(${dist2}px) scale(0.8)`, transformOrigin: "left top", opacity: 0.4 },
-    { transform: "translateY(0px) scale(1)", transformOrigin: "left top", opacity: 0.7 }
-  ], {
-    duration: 260,
-    easing: "cubic-bezier(0.25, 1, 0.5, 1)"
-  });
+  if (slotNext.style.display !== "none") {
+    slotNext.animate([
+      { transform: `translateY(${dist2}px) scale(0.8)`, transformOrigin: "left top", opacity: 0.4 },
+      { transform: "translateY(0px) scale(1)", transformOrigin: "left top", opacity: 0.7 }
+    ], {
+      duration: 260,
+      easing: "cubic-bezier(0.25, 1, 0.5, 1)"
+    });
+  }
 
   if (slotAfter.style.display !== "none") {
     slotAfter.animate([
@@ -515,10 +840,24 @@ function triggerInputError() {
 }
 
 /* =====================================================================
-   8. 입력 감지 및 키 제어 (무중단 0ms 반응 & 한글 IME 누출 방지)
+   9. 무조건 자동 포커스 유지 & 입력 제어
    ===================================================================== */
-practiceBoard.addEventListener("click", () => {
-  typingInput.focus();
+function ensureInputFocus() {
+  if (!typingInput.disabled && !isCountingDown && resultModal.classList.contains("hidden") && !typingContainer.classList.contains("hidden")) {
+    typingInput.focus();
+  }
+}
+
+document.addEventListener("click", (e) => {
+  if (e.target.closest("button") || e.target.closest("select") || e.target.closest(".modal-content") || !lobbyScreen.classList.contains("hidden")) return;
+  ensureInputFocus();
+});
+
+window.addEventListener("keydown", (e) => {
+  if (isCountingDown || !resultModal.classList.contains("hidden") || !lobbyScreen.classList.contains("hidden")) return;
+  if (e.target !== typingInput && !e.ctrlKey && !e.metaKey && !e.altKey && e.key.length === 1) {
+    ensureInputFocus();
+  }
 });
 
 typingInput.addEventListener("compositionend", () => {
@@ -529,8 +868,7 @@ typingInput.addEventListener("compositionend", () => {
 });
 
 typingInput.addEventListener("input", () => {
-  // 전환 시 이전 문장의 마지막 조합 음절이 새 입력창으로 튀어나오는 것 차단
-  if (isComposingLocked) {
+  if (isComposingLocked || isCountingDown) {
     typingInput.value = "";
     return;
   }
@@ -551,7 +889,7 @@ typingInput.addEventListener("input", () => {
   const targetText = activeList[currentIndex];
   if (!targetText) return;
 
-  currentSentenceStrokes = getStringStrokes(currentInput);
+  currentSentenceStrokes = getValidStrokeCount(targetText, currentInput);
 
   if (currentMode === "key") {
     if (currentInput.length >= 1) {
@@ -582,14 +920,12 @@ typingInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter" || e.keyCode === 13) {
     e.preventDefault();
 
-    // IME가 엔터로 조합을 끝낼 때 브라우저가 엔터 이벤트를 2번 연속 날리는 현상 차단
-    if (isSubmittingSentence) return;
+    if (isSubmittingSentence || isCountingDown) return;
 
     if (currentMode !== "key") {
       const targetText = activeList[currentIndex] || "";
       const currentInput = typingInput.value || "";
 
-      // 글자 수 일치 또는 문장 일치 검증
       if (currentInput.length === targetText.length || currentInput.trim() === targetText.trim()) {
         handleNext();
       } else {
@@ -602,7 +938,7 @@ typingInput.addEventListener("keydown", (e) => {
 });
 
 /* =====================================================================
-   9. 가상 키보드 반응 및 토글
+   10. 가상 키보드 하이라이트 및 토글
    ===================================================================== */
 function clearAllActiveKeys() {
   document.querySelectorAll(".key.key-active").forEach((el) => {
@@ -611,7 +947,7 @@ function clearAllActiveKeys() {
 }
 
 window.addEventListener("keydown", (e) => {
-  if (!isKeyboardVisible) return;
+  if (!isKeyboardVisible || !lobbyScreen.classList.contains("hidden")) return;
   const keyEl = document.querySelector(`.key[data-code="${e.code}"]`);
   if (keyEl) {
     keyEl.classList.add("key-active");
@@ -639,10 +975,11 @@ toggleKeyboardBtn.addEventListener("click", () => {
     toggleKeyboardBtn.classList.add("off");
     clearAllActiveKeys();
   }
+  ensureInputFocus();
 });
 
 /* =====================================================================
-   10. 실시간 타수 계산 및 감쇄 (50ms 주기)
+   11. 실시간 타수 계산 및 감쇄 (50ms 주기)
    ===================================================================== */
 setInterval(() => {
   if (!sentenceStartTime) {
@@ -664,8 +1001,16 @@ setInterval(() => {
 }, 50);
 
 /* =====================================================================
-   11. 메뉴 전환 및 재시작
+   12. 메뉴 전환 및 이벤트 리스너
    ===================================================================== */
+// 로비의 4개 모드 카드 클릭 이벤트
+modeCards.forEach((card) => {
+  card.addEventListener("click", () => {
+    startMode(card.dataset.mode);
+  });
+});
+
+// 상단 헤더 모드 네비게이션 버튼
 modeBtns.forEach((btn) => {
   btn.addEventListener("click", () => {
     modeBtns.forEach((b) => b.classList.remove("active"));
@@ -674,6 +1019,11 @@ modeBtns.forEach((btn) => {
     initPractice();
   });
 });
+
+// 상단 로고 및 '메뉴로' 버튼 클릭 시 로비 복귀
+homeLogo.addEventListener("click", showLobby);
+lobbyBackBtn.addEventListener("click", showLobby);
+modalLobbyBtn.addEventListener("click", showLobby);
 
 subBtns.forEach((btn) => {
   btn.addEventListener("click", () => {
@@ -684,17 +1034,19 @@ subBtns.forEach((btn) => {
   });
 });
 
+songSelect.addEventListener("change", (e) => {
+  currentLongKey = e.target.value;
+  initPractice();
+});
+
 restartBtn.addEventListener("click", initPractice);
 
 /* =====================================================================
-   12. 접속 로딩 제어
+   13. 최초 접속 로딩 및 로비 표시 제어
    ===================================================================== */
 window.addEventListener("DOMContentLoaded", () => {
-  initPractice();
-
   setTimeout(() => {
     loadingScreen.classList.add("fade-out");
-    typingContainer.classList.add("fade-in");
-    typingInput.focus();
+    lobbyScreen.classList.add("fade-in");
   }, 700);
 });
