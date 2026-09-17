@@ -65,7 +65,6 @@ function decomposeChar(char) {
   return [{ type: 'other', char: char, stroke: getCharStrokes(char) }];
 }
 
-// 오타를 제외하고 올바르게 친 순타수만 계산
 function getValidStrokeCount(targetText, input) {
   if (!targetText || !input) return 0;
   let validStrokes = 0;
@@ -102,8 +101,6 @@ function parseMultiline(text) {
 
 /* =====================================================================
    2. 연습 데이터 세트
-   - 단문: 100개 밈·명대사 (매번 무작위 7개 출제)
-   - 장문: 대표 명문 전문 완독본
    ===================================================================== */
 const PRACTICE_DATA = {
   key: {
@@ -120,7 +117,6 @@ const PRACTICE_DATA = {
     "하늘", "바람", "구름", "나무", "바다", "태양", "달빛", "별빛", "마음", "사랑",
     "컴퓨터", "키보드", "모니터", "인터넷", "소프트웨어", "프로그래밍", "자바스크립트", "알고리즘", "데이터", "네트워크"
   ],
-  // 100개의 밈, 명언, 유행어 목록
   short: [
     "중요한 것은 꺾이지 않는 마음",
     "중요한 건 꺾였는데도 그냥 하는 마음",
@@ -223,9 +219,7 @@ const PRACTICE_DATA = {
     "소 잃고 외양간 고친다",
     "열 번 찍어 안 넘어가는 나무 없다"
   ],
-  // 장문 완독본 (전문 전체)
   long: {
-    // 1. 윤동주 - 별 헤는 밤 (전문 완독본)
     stars: parseMultiline(`
       계절이 지나가는 하늘에는 가을로 가득 차 있습니다
       나는 아무 걱정도 없이 가을 속의 별들을 다 헤일 듯합니다
@@ -249,7 +243,6 @@ const PRACTICE_DATA = {
       무덤 위에 파란 풀이 피어나듯이
       내 이름자 묻힌 언덕 위에도 자랑처럼 풀이 무성할 거외다
     `),
-    // 2. 한용운 - 님의 침묵 (전문 완독본)
     silence: parseMultiline(`
       님은 갔습니다 아아 사랑하는 나의 님은 갔습니다
       푸른 산빛을 깨치고 단풍나무 숲을 향하여 난 작은 길을 걸어서 차마 떨치고 갔습니다
@@ -264,7 +257,6 @@ const PRACTICE_DATA = {
       아아 님은 갔지마는 나는 님을 보내지 아니하였습니다
       제 곡조를 못 이기는 사랑의 노래는 님의 침묵을 휩싸고 돕니다
     `),
-    // 3. 김소월 - 진달래꽃 (전문 완독본)
     azalea: parseMultiline(`
       나 보기가 역겨워 가실 때에는
       말없이 고이 보내 드리우리다
@@ -275,7 +267,6 @@ const PRACTICE_DATA = {
       나 보기가 역겨워 가실 때에는
       죽어도 아니 눈물 흘리우리다
     `),
-    // 4. 정지용 - 향수 (전문 완독본)
     nostalgia: parseMultiline(`
       넓은 벌 동쪽 끝으로 옛이야기 지줄대는 실개천이 휘돌아 나가고
       얼룩백이 황소가 해설피 금빛 게으른 울음을 우는 곳
@@ -295,7 +286,6 @@ const PRACTICE_DATA = {
       흐릿한 불빛에 돌아앉아 도란도란거리는 곳
       그곳이 차마 꿈엔들 잊힐 리야
     `),
-    // 5. 이상 - 날개 (도입부 전문 완독본)
     wings: parseMultiline(`
       박제가 되어버린 천재를 아시오 나는 유쾌하오
       이런 때 연애까지가 유쾌하오
@@ -345,6 +335,8 @@ let isComposingLocked = false;
 
 let countdownTimer = null;
 let isCountingDown = false;
+let isTransitioning = false;
+let lastSelectedCard = null;
 
 /* =====================================================================
    4. DOM 요소
@@ -398,7 +390,7 @@ const finalTime = document.getElementById("final-time");
 const restartBtn = document.getElementById("restart-btn");
 
 /* =====================================================================
-   5. 시간 제어 및 dayoffdev 스타일 듀얼 롤링 넘버
+   5. 시간 제어 및 듀얼 롤링 넘버
    ===================================================================== */
 function formatTime(seconds) {
   const m = Math.floor(seconds / 60).toString().padStart(2, "0");
@@ -531,7 +523,7 @@ function updateStats() {
 }
 
 /* =====================================================================
-   7. 3초 카운트다운 오버레이 제어
+   7. 3초 카운트다운 제어
    ===================================================================== */
 function triggerCountdown(onFinish) {
   if (countdownTimer) {
@@ -576,6 +568,7 @@ function triggerCountdown(onFinish) {
         isCountingDown = false;
         typingInput.disabled = false;
         ensureInputFocus();
+        startTimer();
         if (onFinish) onFinish();
       }, 200);
     }
@@ -583,29 +576,209 @@ function triggerCountdown(onFinish) {
 }
 
 /* =====================================================================
-   8. 화면 전환 (로비 <-> 연습화면) 및 게임 제어
+   8. 정밀 좌표 기반 iOS 모핑 트랜지션
    ===================================================================== */
-function showLobby() {
-  stopTimer();
-  if (countdownTimer) clearInterval(countdownTimer);
+function animateAppOpen(card) {
+  if (isTransitioning) return;
+  isTransitioning = true;
+  document.body.classList.add("animating");
 
-  resultModal.classList.add("hidden");
-  typingContainer.classList.add("hidden");
-  lobbyScreen.classList.remove("hidden");
-  lobbyScreen.classList.add("fade-in");
-  typingInput.disabled = true;
-}
+  lastSelectedCard = card;
+  const mode = card.dataset.mode;
 
-function startMode(mode) {
   currentMode = mode;
-  lobbyScreen.classList.add("hidden");
-  typingContainer.classList.remove("hidden");
-
   modeBtns.forEach((b) => {
     b.classList.toggle("active", b.dataset.mode === mode);
   });
 
-  initPractice();
+  card.classList.remove("card-rebound");
+  card.style.transform = "none";
+  card.style.transition = "none";
+  void card.offsetWidth;
+  const cardRect = card.getBoundingClientRect();
+  card.style.transition = "";
+
+  lobbyScreen.classList.add("hidden");
+  typingContainer.classList.remove("hidden");
+  typingContainer.style.visibility = "hidden";
+  typingContainer.style.transform = "none";
+  const containerRect = typingContainer.getBoundingClientRect();
+  typingContainer.classList.add("hidden");
+  typingContainer.style.visibility = "";
+  lobbyScreen.classList.remove("hidden");
+
+  const proxy = document.createElement("div");
+  proxy.style.cssText = `
+    position: fixed;
+    top: ${cardRect.top}px;
+    left: ${cardRect.left}px;
+    width: ${cardRect.width}px;
+    height: ${cardRect.height}px;
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1.8px solid #2563eb;
+    box-shadow: 0 10px 24px rgba(37, 99, 235, 0.15);
+    z-index: 9999;
+    pointer-events: none;
+    box-sizing: border-box;
+    will-change: top, left, width, height, border-radius, opacity;
+  `;
+  document.body.appendChild(proxy);
+
+  const IOS_SPRING = "cubic-bezier(0.16, 1, 0.3, 1)";
+  const DURATION = 320;
+
+  lobbyScreen.animate([
+    { opacity: 1, transform: "scale(1)" },
+    { opacity: 0, transform: "scale(0.97)" }
+  ], {
+    duration: DURATION,
+    easing: IOS_SPRING,
+    fill: "forwards"
+  });
+
+  const proxyAnim = proxy.animate([
+    {
+      top: `${cardRect.top}px`,
+      left: `${cardRect.left}px`,
+      width: `${cardRect.width}px`,
+      height: `${cardRect.height}px`,
+      borderRadius: "14px",
+      borderColor: "#2563eb"
+    },
+    {
+      top: `${containerRect.top}px`,
+      left: `${containerRect.left}px`,
+      width: `${containerRect.width}px`,
+      height: `${containerRect.height}px`,
+      borderRadius: "18px",
+      borderColor: "#e2e8f0"
+    }
+  ], {
+    duration: DURATION,
+    easing: IOS_SPRING,
+    fill: "forwards"
+  });
+
+  proxyAnim.onfinish = () => {
+    proxy.remove();
+    lobbyScreen.classList.add("hidden");
+    lobbyScreen.style.opacity = "";
+    lobbyScreen.style.transform = "";
+
+    typingContainer.classList.remove("hidden");
+    typingContainer.animate([
+      { opacity: 0, transform: "scale(0.985)" },
+      { opacity: 1, transform: "scale(1)" }
+    ], {
+      duration: 160,
+      easing: "ease-out",
+      fill: "forwards"
+    }).onfinish = () => {
+      document.body.classList.remove("animating");
+      isTransitioning = false;
+    };
+
+    initPractice();
+  };
+}
+
+function animateAppClose() {
+  if (isTransitioning) return;
+  isTransitioning = true;
+  document.body.classList.add("animating");
+
+  stopTimer();
+  if (countdownTimer) clearInterval(countdownTimer);
+  typingInput.disabled = true;
+  resultModal.classList.add("hidden");
+
+  const targetCard = document.querySelector(`.mode-card[data-mode="${currentMode}"]`) ||
+    lastSelectedCard ||
+    modeCards[0];
+
+  const containerRect = typingContainer.getBoundingClientRect();
+
+  typingContainer.classList.add("hidden");
+  lobbyScreen.classList.remove("hidden");
+  lobbyScreen.style.opacity = "0";
+  lobbyScreen.style.transform = "none";
+
+  targetCard.classList.remove("card-rebound");
+  targetCard.style.transform = "none";
+  targetCard.style.transition = "none";
+  void targetCard.offsetWidth;
+  const cardRect = targetCard.getBoundingClientRect();
+  targetCard.style.transition = "";
+
+  const proxy = document.createElement("div");
+  proxy.style.cssText = `
+    position: fixed;
+    top: ${containerRect.top}px;
+    left: ${containerRect.left}px;
+    width: ${containerRect.width}px;
+    height: ${containerRect.height}px;
+    background: #ffffff;
+    border-radius: 18px;
+    border: 1.5px solid #cbd5e1;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+    z-index: 9999;
+    pointer-events: none;
+    box-sizing: border-box;
+    will-change: top, left, width, height, border-radius, opacity;
+  `;
+  document.body.appendChild(proxy);
+
+  const IOS_SPRING = "cubic-bezier(0.16, 1, 0.3, 1)";
+  const DURATION = 290;
+
+  lobbyScreen.animate([
+    { opacity: 0, transform: "scale(0.97)" },
+    { opacity: 1, transform: "scale(1)" }
+  ], {
+    duration: DURATION,
+    easing: IOS_SPRING,
+    fill: "forwards"
+  });
+
+  const proxyAnim = proxy.animate([
+    {
+      top: `${containerRect.top}px`,
+      left: `${containerRect.left}px`,
+      width: `${containerRect.width}px`,
+      height: `${containerRect.height}px`,
+      borderRadius: "18px",
+      borderColor: "#cbd5e1"
+    },
+    {
+      top: `${cardRect.top}px`,
+      left: `${cardRect.left}px`,
+      width: `${cardRect.width}px`,
+      height: `${cardRect.height}px`,
+      borderRadius: "14px",
+      borderColor: "#2563eb"
+    }
+  ], {
+    duration: DURATION,
+    easing: IOS_SPRING,
+    fill: "forwards"
+  });
+
+  proxyAnim.onfinish = () => {
+    proxy.remove();
+    lobbyScreen.style.opacity = "";
+    lobbyScreen.style.transform = "";
+    document.body.classList.remove("animating");
+    isTransitioning = false;
+
+    targetCard.classList.remove("card-rebound");
+    void targetCard.offsetWidth;
+    targetCard.classList.add("card-rebound");
+
+    setTimeout(() => {
+      targetCard.classList.remove("card-rebound");
+    }, 450);
+  };
 }
 
 function initPractice() {
@@ -840,7 +1013,7 @@ function triggerInputError() {
 }
 
 /* =====================================================================
-   9. 무조건 자동 포커스 유지 & 입력 제어
+   9. 자동 포커스 유지 & 입력 제어
    ===================================================================== */
 function ensureInputFocus() {
   if (!typingInput.disabled && !isCountingDown && resultModal.classList.contains("hidden") && !typingContainer.classList.contains("hidden")) {
@@ -938,7 +1111,7 @@ typingInput.addEventListener("keydown", (e) => {
 });
 
 /* =====================================================================
-   10. 가상 키보드 하이라이트 및 토글
+   10. 가상 키보드 제어 (슬라이드 애니메이션 토글)
    ===================================================================== */
 function clearAllActiveKeys() {
   document.querySelectorAll(".key.key-active").forEach((el) => {
@@ -965,21 +1138,23 @@ window.addEventListener("blur", clearAllActiveKeys);
 
 toggleKeyboardBtn.addEventListener("click", () => {
   isKeyboardVisible = !isKeyboardVisible;
+
   if (isKeyboardVisible) {
-    keyboardWrapper.classList.remove("hidden");
+    keyboardWrapper.classList.remove("collapsed");
     toggleKeyboardBtn.textContent = "⌨️ 키보드 숨기기";
     toggleKeyboardBtn.classList.remove("off");
   } else {
-    keyboardWrapper.classList.add("hidden");
+    keyboardWrapper.classList.add("collapsed");
     toggleKeyboardBtn.textContent = "⌨️ 키보드 켜기";
     toggleKeyboardBtn.classList.add("off");
     clearAllActiveKeys();
   }
+
   ensureInputFocus();
 });
 
 /* =====================================================================
-   11. 실시간 타수 계산 및 감쇄 (50ms 주기)
+   11. 실시간 타수 계산 (50ms 주기)
    ===================================================================== */
 setInterval(() => {
   if (!sentenceStartTime) {
@@ -1001,16 +1176,14 @@ setInterval(() => {
 }, 50);
 
 /* =====================================================================
-   12. 메뉴 전환 및 이벤트 리스너
+   12. 메뉴 전환 및 이벤트 바인딩
    ===================================================================== */
-// 로비의 4개 모드 카드 클릭 이벤트
 modeCards.forEach((card) => {
   card.addEventListener("click", () => {
-    startMode(card.dataset.mode);
+    animateAppOpen(card);
   });
 });
 
-// 상단 헤더 모드 네비게이션 버튼
 modeBtns.forEach((btn) => {
   btn.addEventListener("click", () => {
     modeBtns.forEach((b) => b.classList.remove("active"));
@@ -1020,10 +1193,9 @@ modeBtns.forEach((btn) => {
   });
 });
 
-// 상단 로고 및 '메뉴로' 버튼 클릭 시 로비 복귀
-homeLogo.addEventListener("click", showLobby);
-lobbyBackBtn.addEventListener("click", showLobby);
-modalLobbyBtn.addEventListener("click", showLobby);
+homeLogo.addEventListener("click", animateAppClose);
+lobbyBackBtn.addEventListener("click", animateAppClose);
+modalLobbyBtn.addEventListener("click", animateAppClose);
 
 subBtns.forEach((btn) => {
   btn.addEventListener("click", () => {
@@ -1042,7 +1214,7 @@ songSelect.addEventListener("change", (e) => {
 restartBtn.addEventListener("click", initPractice);
 
 /* =====================================================================
-   13. 최초 접속 로딩 및 로비 표시 제어
+   13. 로딩 화면 해제
    ===================================================================== */
 window.addEventListener("DOMContentLoaded", () => {
   setTimeout(() => {
