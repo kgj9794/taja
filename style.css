@@ -20,7 +20,7 @@ body {
   position: relative;
 }
 
-/* 전환 애니메이션 중 호버/클릭 간섭 및 좌표 오차 차단 */
+/* 전환 애니메이션 중 간섭 방지 */
 body.animating {
   pointer-events: none !important;
   user-select: none !important;
@@ -86,7 +86,7 @@ body.animating .mode-card {
 }
 
 /* =====================================================================
-   메인 로비(모드 선택) 화면 & 카드 리바운드 모션
+   메인 로비 화면
    ===================================================================== */
 .lobby-container {
   grid-area: 1 / 1;
@@ -165,20 +165,9 @@ body.animating .mode-card {
 }
 
 @keyframes cardPopOut {
-  0% {
-    transform: scale(0.92);
-    border-color: #2563eb;
-  }
-  55% {
-    transform: scale(1.04);
-    border-color: #2563eb;
-    box-shadow: 0 10px 24px rgba(37, 99, 235, 0.2);
-  }
-  100% {
-    transform: scale(1);
-    border-color: #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-  }
+  0% { transform: scale(0.92); border-color: #2563eb; }
+  55% { transform: scale(1.04); border-color: #2563eb; box-shadow: 0 10px 24px rgba(37, 99, 235, 0.2); }
+  100% { transform: scale(1); border-color: #e2e8f0; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04); }
 }
 
 .card-icon {
@@ -227,14 +216,14 @@ body.animating .mode-card {
   gap: 16px;
   will-change: transform, opacity;
   transform-origin: center center;
-  overflow: hidden; /* 슬라이드 시 가로 스크롤 및 튀어나옴 방지 */
+  overflow: hidden;
 }
 
 .typing-container.hidden {
   display: none !important;
 }
 
-/* 상단 헤더 (항상 고정) */
+/* 상단 헤더 */
 header {
   display: flex;
   justify-content: space-between;
@@ -328,7 +317,6 @@ header {
   color: #ef4444;
 }
 
-/* 홈 아이콘 단독 버튼 */
 .header-action-btn.icon-btn {
   width: 35px;
   padding: 0;
@@ -346,7 +334,7 @@ header {
 }
 
 /* =====================================================================
-   하단 통합 바디 및 좌우 스와이프 슬라이드 트랜지션
+   하단 통합 바디 및 모드 전환 좌우 슬라이드
    ===================================================================== */
 .practice-body {
   display: flex;
@@ -457,12 +445,22 @@ header {
 }
 
 /* =====================================================================
-   대시보드 (오도미터 듀얼 롤링 넘버)
+   대시보드 & 타수 카드 숨김 동적 2열 레이아웃
    ===================================================================== */
 .dashboard {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
+  transition: grid-template-columns 0.2s ease;
+}
+
+/* 자리연습 모드 전용: 현재 타수 카드를 숨기고 진행 시간과 정확도를 1:1로 확장 */
+.dashboard.hide-cpm {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.dashboard.hide-cpm #cpm-card {
+  display: none !important;
 }
 
 .stat-card {
@@ -506,7 +504,6 @@ header {
   color: #64748b;
 }
 
-/* 롤링 숫자 슬롯 */
 .time-group {
   display: inline-flex;
   align-items: center;
@@ -543,7 +540,6 @@ header {
   opacity: 0.75;
 }
 
-/* 정확도 하락 / 띠용~ 관성 */
 .acc-drop {
   animation: accFall 0.35s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
 }
@@ -600,7 +596,7 @@ header {
 }
 
 /* =====================================================================
-   타자 연습 보드 & 3초 카운트다운 오버레이
+   타자 연습 보드
    ===================================================================== */
 .practice-area {
   width: 100%;
@@ -610,6 +606,7 @@ header {
 .practice-board {
   position: relative;
   width: 100%;
+  min-height: 180px;
   background: #ffffff;
   border: 1.5px solid #cbd5e1;
   border-radius: 16px;
@@ -619,6 +616,7 @@ header {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -627,7 +625,7 @@ header {
   box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
 }
 
-/* 3초 카운트다운 오버레이 (소프트 블러) */
+/* 3초 카운트다운 오버레이 */
 .countdown-overlay {
   position: absolute;
   inset: 0;
@@ -675,13 +673,184 @@ header {
   text-shadow: 0 1px 8px rgba(255, 255, 255, 0.9);
 }
 
-/* 피드 슬롯 */
+/* =====================================================================
+   1. 수평 컨베이어 뷰 (박스 프레임 고정 + 글자만 우->좌 슬라이드)
+   ===================================================================== */
+.horizontal-view {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.horizontal-view.hidden {
+  display: none !important;
+}
+
+.h-stage {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  position: relative;
+}
+
+.h-rail {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  position: relative;
+  min-height: 52px;
+}
+
+.h-rail-left {
+  justify-content: flex-end;
+  mask-image: linear-gradient(to left, black 50%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to left, black 50%, transparent 100%);
+}
+
+.h-rail-right {
+  justify-content: flex-start;
+  mask-image: linear-gradient(to right, black 50%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, black 50%, transparent 100%);
+}
+
+/* 정중앙 입력 포커스 카드 (완전 고정) */
+.h-slot-current {
+  width: 210px;
+  min-height: 112px;
+  background: #ffffff;
+  border: 2.2px solid #2563eb;
+  border-radius: 14px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.12);
+  user-select: none;
+  transform: none !important;
+}
+
+.h-target-wrap {
+  width: 100%;
+  text-align: center;
+  overflow: hidden;
+  position: relative;
+}
+
+/* 박스 내부 단어만 우측에서 스르륵 들어오는 애니메이션 */
+.h-target-text {
+  font-size: 2.1rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: 2px;
+  display: block;
+  min-height: 2.4rem;
+  line-height: 1.1;
+  will-change: transform, opacity;
+}
+
+.h-target-text.h-slide-left {
+  animation: hWordSlideIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes hWordSlideIn {
+  0% { transform: translateX(65px); opacity: 0.2; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+.h-input-wrap {
+  width: 100%;
+  text-align: center;
+  border-top: 1.5px solid #f1f5f9;
+  padding-top: 5px;
+  min-height: 1.8rem;
+}
+
+.h-user-text {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  display: inline-block;
+}
+
+/* 대기열 큐 레일 우->좌 슬라이드 */
+.h-queue-list {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  will-change: transform;
+}
+
+.h-queue-list.h-slide-left {
+  animation: hSlideQueueFromRight 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes hSlideQueueFromRight {
+  0% { transform: translateX(75px); }
+  100% { transform: translateX(0); }
+}
+
+.h-queue-item {
+  height: 48px;
+  min-width: 68px;
+  padding: 0 16px;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #64748b;
+  letter-spacing: 1.5px;
+  user-select: none;
+  white-space: nowrap;
+  will-change: transform, opacity;
+}
+
+/* 좌측 이전 단어로 밀려나는 애니메이션 */
+.h-prev-item {
+  opacity: 0.35;
+  filter: grayscale(1);
+  border-style: dashed;
+}
+
+.h-prev-item.h-slide-left {
+  animation: hSlidePrevFromCenter 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes hSlidePrevFromCenter {
+  0% { transform: translateX(95px); opacity: 0.75; }
+  100% { transform: translateX(0); opacity: 0.35; }
+}
+
+.h-prev-item:empty {
+  visibility: hidden;
+}
+
+/* =====================================================================
+   2. 수직 3단 피드 뷰 (단문연습 / 장문연습)
+   ===================================================================== */
+.vertical-view {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.vertical-view.hidden {
+  display: none !important;
+}
+
 .sentence-slot {
   width: 100%;
   will-change: transform, opacity;
 }
 
-/* 1단: 당장 입력해야 할 구역 (1.65rem) */
 .slot-current {
   display: flex;
   flex-direction: column;
@@ -748,7 +917,6 @@ header {
   50% { opacity: 0; }
 }
 
-/* 2단: 그 다음 입력할 문장 (1.25rem) */
 .slot-next {
   padding-top: 14px;
   border-top: 1px dashed #e2e8f0;
@@ -769,14 +937,12 @@ header {
   text-align: left;
 }
 
-/* 3단: 그 다음다음 입력할 문장 (0.95rem) */
 .slot-after {
   margin-bottom: 4px;
   font-size: 0.95rem;
   opacity: 0.4;
 }
 
-/* 실제 인풋 필드 및 에러 흔들림 */
 .hidden-input {
   position: absolute;
   top: 0;
@@ -803,7 +969,7 @@ header {
 }
 
 /* =====================================================================
-   가상 키보드 (접이식 부드러운 슬라이드 애니메이션)
+   가상 키보드 & 다음 입력 타깃 은은한 레드 하이라이트
    ===================================================================== */
 .keyboard-wrapper {
   background: #f8fafc;
@@ -858,7 +1024,7 @@ header {
   color: #475569;
   box-shadow: 0 2px 0 #cbd5e1;
   cursor: default;
-  transition: background-color 0.05s, transform 0.05s, box-shadow 0.05s;
+  transition: background-color 0.12s, transform 0.05s, box-shadow 0.12s, border-color 0.12s;
   line-height: 1.1;
 }
 
@@ -881,12 +1047,44 @@ header {
 .key-shift { flex: 2.1; font-size: 0.75rem; }
 .key-space { flex: 6; font-size: 0.8rem; font-weight: 600; color: #64748b; }
 
+/* 1) 눌러야 할 키: 은은한 레드 하이라이트 */
+.key.key-target {
+  background-color: #fee2e2 !important;
+  border-color: #f87171 !important;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.28), 0 2px 0 #fca5a5 !important;
+  animation: keyRedPulse 1.4s ease-in-out infinite alternate;
+}
+
+.key.key-target span.ko {
+  color: #b91c1c !important;
+  font-weight: 800;
+}
+
+.key.key-target span.en {
+  color: #ef4444 !important;
+}
+
+@keyframes keyRedPulse {
+  0% {
+    background-color: #fff1f2;
+    border-color: #fecdd3;
+    box-shadow: 0 0 5px rgba(239, 68, 68, 0.18), 0 2px 0 #fecdd3;
+  }
+  100% {
+    background-color: #fee2e2;
+    border-color: #f87171;
+    box-shadow: 0 0 14px rgba(239, 68, 68, 0.38), 0 2px 0 #fca5a5;
+  }
+}
+
+/* 2) 실제 입력 시: 블루 액티브 */
 .key.key-active {
   background-color: #2563eb !important;
   color: #ffffff !important;
   border-color: #1d4ed8 !important;
   box-shadow: 0 0 0 #1d4ed8 !important;
   transform: translateY(2px);
+  animation: none !important;
 }
 
 .key.key-active span.ko,
