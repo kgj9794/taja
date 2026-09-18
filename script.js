@@ -29,7 +29,7 @@ function getCharStrokes(char) {
     return 1;
   }
 
-  if (/[A-Z!@#$%^&*()_+{}|:"<>?~]/.test(char)) return 2;
+  if (/[A-Z!@#$%^&*()_+{}|:"<>?~.]/.test(char)) return 2;
   return 1;
 }
 
@@ -118,106 +118,106 @@ const PRACTICE_DATA = {
     "컴퓨터", "키보드", "모니터", "인터넷", "소프트웨어", "프로그래밍", "자바스크립트", "알고리즘", "데이터", "네트워크"
   ],
   short: [
-    "중요한 것은 꺾이지 않는 마음",
-    "중요한 건 꺾였는데도 그냥 하는 마음",
-    "오히려 좋아 가보자고",
-    "폼 미쳤다 진짜 레전드네",
-    "알아서 잘 딱 깔끔하고 센스있게",
-    "어쩔티비 저쩔티비 안물티비 안궁티비",
-    "내 뼈 그만 때려 순살 되겠어",
-    "이게 무슨 일이야 이렇게 좋은 날에",
-    "당황하지 않고 자연스럽게 넘어가기",
-    "내 안에 잠든 흑염룡이 깨어난다",
-    "맑은 눈의 광인 그 자체",
-    "멈춰 학교폭력 멈춰",
-    "가보자고 인생 뭐 있어 직진이야",
-    "돈 많은 백수가 되고 싶다",
-    "월급은 통장을 스쳐 지나갈 뿐",
-    "퇴근하고 싶다 격렬하게 퇴근하고 싶다",
-    "네가 왜 거기서 나와",
-    "호의가 계속되면 권리인 줄 안다",
-    "피할 수 없으면 즐겨라",
-    "인생은 실전이야 종만아",
-    "묻고 더블로 가",
-    "내가 왕이 될 상인가",
-    "어디서 타는 냄새 안 나요 내 심장이 불타고 있잖아요",
-    "소년이여 야망을 품어라",
-    "오늘 걷지 않으면 내일은 뛰어야 한다",
-    "늦었다고 생각할 때가 진짜 너무 늦었다",
-    "티끌 모아 태산이 아니라 티끌 모아 티끌이다",
-    "포기하면 편해 하지만 다시 일어나야지",
-    "너 자신을 알라",
-    "이 또한 지나가리라",
-    "내일은 내일의 태양이 뜬다",
-    "아무것도 안 했는데 벌써 이 시간이야",
-    "오늘 먹을 치킨을 내일로 미루지 말라",
-    "맛있게 먹으면 0칼로리",
-    "인생은 타이밍과 추진력이다",
-    "완전 럭키비키잖아",
-    "이게 바로 원영적 사고",
-    "중꺾마 정신으로 버티는 거야",
-    "기출변형에 당황하지 마라",
-    "사람은 서울로 가고 말은 제주도로 가야 한다",
-    "침대는 과학입니다",
-    "인생은 짧고 예술은 길다",
-    "아는 것이 힘이다",
-    "천 리 길도 한 걸음부터",
-    "고생 끝에 낙이 온다",
-    "시작이 반이다",
-    "백지장도 맞들면 낫다",
-    "콩 심은 데 콩 나고 팥 심은 데 팥 난다",
-    "발 없는 말이 천 리 간다",
-    "낮말은 새가 듣고 밤말은 쥐가 듣는다",
-    "가는 말이 고와야 오는 말이 곱다",
-    "웃는 얼굴에 침 못 뱉는다",
-    "세 살 버릇 여든까지 간다",
-    "티끌 모아 로또 산다",
-    "아침 일찍 일어나는 새가 피곤하다",
-    "일찍 일어나는 벌레는 새한테 잡힌다",
-    "남의 떡이 더 커 보인다",
-    "벼는 익을수록 고개를 숙인다",
-    "호랑이도 제 말 하면 온다",
-    "쇠뿔도 단김에 빼라",
-    "얌전한 고양이가 부뚜막에 먼저 올라간다",
-    "등잔 밑이 어둡다",
-    "뱁새가 황새 따라가다 가랑이 찢어진다",
-    "원숭이도 나무에서 떨어진다",
-    "금강산도 식후경",
-    "우물 안 개구리",
-    "하늘이 무너져도 솟아날 구멍은 있다",
-    "구슬이 서 말이라도 꿰어야 보배",
-    "길고 짧은 것은 대봐야 안다",
-    "닭 쫓던 개 지붕 쳐다본다",
-    "똥 묻은 개가 겨 묻은 개 나무란다",
-    "보기 좋은 떡이 먹기도 좋다",
-    "수박 겉핥기",
-    "십 년이면 강산도 변한다",
-    "아니 땐 굴뚝에 연기 날까",
-    "옥에 티",
-    "작심삼일도 열 번이면 한 달이다",
-    "재주가 많은 사람은 배가 고프다",
-    "쥐구멍에도 볕 들 날 있다",
-    "짚신도 짝이 있다",
-    "칼로 물 베기",
-    "하룻강아지 범 무서운 줄 모른다",
-    "간에 기별도 안 간다",
-    "개천에서 용 난다",
-    "걱정도 팔자다",
-    "고래 싸움에 새우 등 터진다",
-    "공든 탑이 무너지랴",
-    "꿩 대신 닭",
-    "누워서 침 뱉기",
-    "달면 삼키고 쓰면 뱉는다",
-    "도토리 키 재기",
-    "땅 짚고 헤엄치기",
-    "말 한마디로 천 냥 빚을 갚는다",
-    "매도 먼저 맞는 게 낫다",
-    "바늘 도둑이 소 도둑 된다",
-    "배보다 배꼽이 더 크다",
-    "빈 수레가 더 요란하다",
-    "사공이 많으면 배가 산으로 간다",
-    "소 잃고 외양간 고친다",
-    "열 번 찍어 안 넘어가는 나무 없다"
+    "중요한 것은 꺾이지 않는 마음.",
+    "중요한 건 꺾였는데도 그냥 하는 마음.",
+    "오히려 좋아 가보자고.",
+    "폼 미쳤다 진짜 레전드네.",
+    "알아서 잘 딱 깔끔하고 센스있게.",
+    "어쩔티비 저쩔티비 안물티비 안궁티비.",
+    "내 뼈 그만 때려 순살 되겠어.",
+    "이게 무슨 일이야 이렇게 좋은 날에.",
+    "당황하지 않고 자연스럽게 넘어가기.",
+    "내 안에 잠든 흑염룡이 깨어난다.",
+    "맑은 눈의 광인 그 자체.",
+    "멈춰 학교폭력 멈춰.",
+    "가보자고 인생 뭐 있어 직진이야.",
+    "돈 많은 백수가 되고 싶다.",
+    "월급은 통장을 스쳐 지나갈 뿐.",
+    "퇴근하고 싶다 격렬하게 퇴근하고 싶다.",
+    "네가 왜 거기서 나와.",
+    "호의가 계속되면 권리인 줄 안다.",
+    "피할 수 없으면 즐겨라.",
+    "인생은 실전이야 종만아.",
+    "묻고 더블로 가.",
+    "내가 왕이 될 상인가.",
+    "어디서 타는 냄새 안 나요 내 심장이 불타고 있잖아요.",
+    "소년이여 야망을 품어라.",
+    "오늘 걷지 않으면 내일은 뛰어야 한다.",
+    "늦었다고 생각할 때가 진짜 너무 늦었다.",
+    "티끌 모아 태산이 아니라 티끌 모아 티끌이다.",
+    "포기하면 편해 하지만 다시 일어나야지.",
+    "너 자신을 알라.",
+    "이 또한 지나가리라.",
+    "내일은 내일의 태양이 뜬다.",
+    "아무것도 안 했는데 벌써 이 시간이야.",
+    "오늘 먹을 치킨을 내일로 미루지 말라.",
+    "맛있게 먹으면 0칼로리.",
+    "인생은 타이밍과 추진력이다.",
+    "완전 럭키비키잖아.",
+    "이게 바로 원영적 사고.",
+    "중꺾마 정신으로 버티는 거야.",
+    "기출변형에 당황하지 마라.",
+    "사람은 서울로 가고 말은 제주도로 가야 한다.",
+    "침대는 과학입니다.",
+    "인생은 짧고 예술은 길다.",
+    "아는 것이 힘이다.",
+    "천 리 길도 한 걸음부터.",
+    "고생 끝에 낙이 온다.",
+    "시작이 반이다.",
+    "백지장도 맞들면 낫다.",
+    "콩 심은 데 콩 나고 팥 심은 데 팥 난다.",
+    "발 없는 말이 천 리 간다.",
+    "낮말은 새가 듣고 밤말은 쥐가 듣는다.",
+    "가는 말이 고와야 오는 말이 곱다.",
+    "웃는 얼굴에 침 못 뱉는다.",
+    "세 살 버릇 여든까지 간다.",
+    "티끌 모아 로또 산다.",
+    "아침 일찍 일어나는 새가 피곤하다.",
+    "일찍 일어나는 벌레는 새한테 잡힌다.",
+    "남의 떡이 더 커 보인다.",
+    "벼는 익을수록 고개를 숙인다.",
+    "호랑이도 제 말 하면 온다.",
+    "쇠뿔도 단김에 빼라.",
+    "얌전한 고양이가 부뚜막에 먼저 올라간다.",
+    "등잔 밑이 어둡다.",
+    "뱁새가 황새 따라가다 가랑이 찢어진다.",
+    "원숭이도 나무에서 떨어진다.",
+    "금강산도 식후경.",
+    "우물 안 개구리.",
+    "하늘이 무너져도 솟아날 구멍은 있다.",
+    "구슬이 서 말이라도 꿰어야 보배.",
+    "길고 짧은 것은 대봐야 안다.",
+    "닭 쫓던 개 지붕 쳐다본다.",
+    "똥 묻은 개가 겨 묻은 개 나무란다.",
+    "보기 좋은 떡이 먹기도 좋다.",
+    "수박 겉핥기.",
+    "십 년이면 강산도 변한다.",
+    "아니 땐 굴뚝에 연기 날까.",
+    "옥에 티.",
+    "작심삼일도 열 번이면 한 달이다.",
+    "재주가 많은 사람은 배가 고프다.",
+    "쥐구멍에도 볕 들 날 있다.",
+    "짚신도 짝이 있다.",
+    "칼로 물 베기.",
+    "하룻강아지 범 무서운 줄 모른다.",
+    "간에 기별도 안 간다.",
+    "개천에서 용 난다.",
+    "걱정도 팔자다.",
+    "고래 싸움에 새우 등 터진다.",
+    "공든 탑이 무너지랴.",
+    "꿩 대신 닭.",
+    "누워서 침 뱉기.",
+    "달면 삼키고 쓰면 뱉는다.",
+    "도토리 키 재기.",
+    "땅 짚고 헤엄치기.",
+    "말 한마디로 천 냥 빚을 갚는다.",
+    "매도 먼저 맞는 게 낫다.",
+    "바늘 도둑이 소 도둑 된다.",
+    "배보다 배꼽이 더 크다.",
+    "빈 수레가 더 요란하다.",
+    "사공이 많으면 배가 산으로 간다.",
+    "소 잃고 외양간 고친다.",
+    "열 번 찍어 안 넘어가는 나무 없다."
   ],
   long: {
     stars: parseMultiline(`
@@ -308,6 +308,7 @@ const PRACTICE_DATA = {
 /* =====================================================================
    3. 상태 관리
    ===================================================================== */
+const MODE_ORDER = ["key", "word", "short", "long"];
 let currentMode = "key";
 let currentSubPos = "base";
 let currentLongKey = "stars";
@@ -329,13 +330,17 @@ let startTime = null;
 let elapsedSeconds = 0;
 let isTimerRunning = false;
 
-let isKeyboardVisible = true;
+// 브라우저 localStorage에서 키보드 표시 설정 복원 (기본값: true)
+const KEYBOARD_STORAGE_KEY = "typing_practice_keyboard_visible";
+let isKeyboardVisible = localStorage.getItem(KEYBOARD_STORAGE_KEY) !== "false";
+
 let isSubmittingSentence = false;
 let isComposingLocked = false;
 
 let countdownTimer = null;
 let isCountingDown = false;
 let isTransitioning = false;
+let isModeSwitching = false;
 let lastSelectedCard = null;
 
 /* =====================================================================
@@ -350,6 +355,10 @@ const modalLobbyBtn = document.getElementById("modal-lobby-btn");
 
 const modeCards = document.querySelectorAll(".mode-card");
 const modeBtns = document.querySelectorAll(".mode-btn");
+
+// 하단 통합 슬라이드 대상
+const practiceBody = document.getElementById("practice-body");
+
 const subMenuBar = document.getElementById("sub-menu-bar");
 const subBtns = document.querySelectorAll(".sub-btn");
 const songSelectBar = document.getElementById("song-select-bar");
@@ -796,7 +805,9 @@ function initPractice() {
   } else if (currentMode === "short") {
     subMenuBar.style.display = "none";
     songSelectBar.style.display = "none";
-    activeList = shuffle([...PRACTICE_DATA.short]).slice(0, 7);
+    activeList = shuffle([...PRACTICE_DATA.short])
+      .slice(0, 7)
+      .map(sentence => sentence.endsWith('.') ? sentence : `${sentence}.`);
   } else {
     subMenuBar.style.display = "none";
     songSelectBar.style.display = "none";
@@ -1111,12 +1122,25 @@ typingInput.addEventListener("keydown", (e) => {
 });
 
 /* =====================================================================
-   10. 가상 키보드 제어 (슬라이드 애니메이션 토글)
+   10. 가상 키보드 제어 및 상태 동기화 (localStorage 연동)
    ===================================================================== */
 function clearAllActiveKeys() {
   document.querySelectorAll(".key.key-active").forEach((el) => {
     el.classList.remove("key-active");
   });
+}
+
+function updateKeyboardVisibilityUI() {
+  if (isKeyboardVisible) {
+    keyboardWrapper.classList.remove("collapsed");
+    toggleKeyboardBtn.textContent = "⌨️ 키보드 숨기기";
+    toggleKeyboardBtn.classList.remove("off");
+  } else {
+    keyboardWrapper.classList.add("collapsed");
+    toggleKeyboardBtn.textContent = "⌨️ 키보드 켜기";
+    toggleKeyboardBtn.classList.add("off");
+    clearAllActiveKeys();
+  }
 }
 
 window.addEventListener("keydown", (e) => {
@@ -1138,18 +1162,8 @@ window.addEventListener("blur", clearAllActiveKeys);
 
 toggleKeyboardBtn.addEventListener("click", () => {
   isKeyboardVisible = !isKeyboardVisible;
-
-  if (isKeyboardVisible) {
-    keyboardWrapper.classList.remove("collapsed");
-    toggleKeyboardBtn.textContent = "⌨️ 키보드 숨기기";
-    toggleKeyboardBtn.classList.remove("off");
-  } else {
-    keyboardWrapper.classList.add("collapsed");
-    toggleKeyboardBtn.textContent = "⌨️ 키보드 켜기";
-    toggleKeyboardBtn.classList.add("off");
-    clearAllActiveKeys();
-  }
-
+  localStorage.setItem(KEYBOARD_STORAGE_KEY, isKeyboardVisible);
+  updateKeyboardVisibilityUI();
   ensureInputFocus();
 });
 
@@ -1176,8 +1190,42 @@ setInterval(() => {
 }, 50);
 
 /* =====================================================================
-   12. 메뉴 전환 및 이벤트 바인딩
+   12. 메뉴 전환 및 하단 전체(#practice-body) 좌우 스와이프 트랜지션
    ===================================================================== */
+function switchModeWithSlide(newMode) {
+  if (isModeSwitching || newMode === currentMode) return;
+  isModeSwitching = true;
+
+  const prevIdx = MODE_ORDER.indexOf(currentMode);
+  const nextIdx = MODE_ORDER.indexOf(newMode);
+  const isForward = nextIdx > prevIdx;
+
+  const outClass = isForward ? "slide-out-to-left" : "slide-out-to-right";
+  const inClass = isForward ? "slide-in-from-right" : "slide-in-from-left";
+
+  modeBtns.forEach((b) => b.classList.toggle("active", b.dataset.mode === newMode));
+  currentMode = newMode;
+
+  practiceBody.classList.remove(
+    "slide-out-to-left",
+    "slide-in-from-right",
+    "slide-out-to-right",
+    "slide-in-from-left"
+  );
+  practiceBody.classList.add(outClass);
+
+  setTimeout(() => {
+    initPractice();
+    practiceBody.classList.remove(outClass);
+    practiceBody.classList.add(inClass);
+
+    setTimeout(() => {
+      practiceBody.classList.remove(inClass);
+      isModeSwitching = false;
+    }, 240);
+  }, 180);
+}
+
 modeCards.forEach((card) => {
   card.addEventListener("click", () => {
     animateAppOpen(card);
@@ -1186,10 +1234,7 @@ modeCards.forEach((card) => {
 
 modeBtns.forEach((btn) => {
   btn.addEventListener("click", () => {
-    modeBtns.forEach((b) => b.classList.remove("active"));
-    btn.classList.add("active");
-    currentMode = btn.dataset.mode;
-    initPractice();
+    switchModeWithSlide(btn.dataset.mode);
   });
 });
 
@@ -1214,9 +1259,11 @@ songSelect.addEventListener("change", (e) => {
 restartBtn.addEventListener("click", initPractice);
 
 /* =====================================================================
-   13. 로딩 화면 해제
+   13. 로딩 화면 해제 및 키보드 저장 상태 초기화
    ===================================================================== */
 window.addEventListener("DOMContentLoaded", () => {
+  updateKeyboardVisibilityUI();
+
   setTimeout(() => {
     loadingScreen.classList.add("fade-out");
     lobbyScreen.classList.add("fade-in");
