@@ -73,14 +73,18 @@
         </nav>
       </div>
       <div class="header-right">
-        <!-- 홈으로 돌아가기 버튼 -->
+        <!-- 순위표 바로보기 버튼 -->
+        <button id="header-rank-btn" class="header-action-btn icon-btn" title="순위표 확인" aria-label="순위표 확인">
+          <span style="font-size: 1.1rem; line-height: 1;">🏆</span>
+        </button>
+        <!-- 홈 버튼 -->
         <button id="lobby-back-btn" class="header-action-btn icon-btn" title="홈으로" aria-label="메인 메뉴로 돌아가기">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 9.5L12 3l9 6.5V20a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9.5z"></path>
             <polyline points="9 22 9 12 15 12 15 22"></polyline>
           </svg>
         </button>
-        <!-- 가상 키보드 토글 아이콘 버튼 (켜짐/꺼짐 빗금 토글) -->
+        <!-- 가상 키보드 켜기/끄기 아이콘 버튼 -->
         <button id="toggle-keyboard-btn" class="header-action-btn icon-btn" title="키보드 숨기기" aria-label="가상 키보드 켜기/끄기">
           <svg class="kb-icon" xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
@@ -93,7 +97,6 @@
             <line x1="14" y1="12" x2="14.01" y2="12"></line>
             <line x1="18" y1="12" x2="18.01" y2="12"></line>
             <line x1="7" y1="16" x2="17" y2="16"></line>
-            <!-- 빗금 라인: off 상태일 때만 CSS로 노출 -->
             <line class="kb-slash" x1="2" y1="2" x2="22" y2="22"></line>
           </svg>
         </button>
@@ -128,7 +131,7 @@
         </div>
       </div>
 
-      <!-- 대시보드 (오도미터 듀얼 롤링 넘버) -->
+      <!-- 대시보드 -->
       <section class="dashboard" id="dashboard">
         <div class="stat-card">
           <span class="stat-label">진행 시간</span>
@@ -143,7 +146,7 @@
           </div>
         </div>
 
-        <!-- 현재 타수 카드 (자리연습 시 숨김 처리 대상) -->
+        <!-- 현재 타수 카드 (자리연습 시 숨김) -->
         <div class="stat-card" id="cpm-card">
           <span class="stat-label">현재 타수</span>
           <div class="stat-value-group">
@@ -180,15 +183,15 @@
             <p id="countdown-sub" class="countdown-sub">잠시 후 연습이 시작됩니다</p>
           </div>
 
-          <!-- 1. 수평 컨베이어 뷰 (자리연습 / 낱말연습 전용 - 중앙 고정 배치) -->
+          <!-- 1. 수평 컨베이어 뷰 (자리연습 / 낱말연습 전용) -->
           <div id="horizontal-view" class="horizontal-view">
             <div class="h-stage">
-              <!-- 좌측: 직전 완료된 글자/단어 레일 -->
+              <!-- 좌측: 직전 완료 단어 레일 -->
               <div class="h-rail h-rail-left">
                 <div id="h-prev-item" class="h-queue-item h-prev-item"></div>
               </div>
 
-              <!-- 중앙: 현재 입력해야 할 대상 박스 (프레임 고정) -->
+              <!-- 중앙: 현재 입력 박스 -->
               <div class="h-slot-current" id="h-slot-current">
                 <div class="h-target-wrap">
                   <span id="h-target-display" class="h-target-text"></span>
@@ -198,7 +201,7 @@
                 </div>
               </div>
 
-              <!-- 우측: 대기 중인 다음 글자/단어 큐 레일 -->
+              <!-- 우측: 대기열 큐 레일 -->
               <div class="h-rail h-rail-right">
                 <div id="h-queue-list" class="h-queue-list"></div>
               </div>
@@ -301,10 +304,11 @@
       </div>
     </div>
 
-    <!-- 결과 모달 -->
+    <!-- 1. 연습 완료 모달 (통계 및 2단계 랭킹 등록) -->
     <div id="result-modal" class="modal hidden">
-      <div class="modal-content">
+      <div class="modal-content result-modal-box">
         <h2>연습 완료!</h2>
+
         <div class="result-stats">
           <div class="result-row">
             <span class="result-label">평균 타수</span>
@@ -319,9 +323,61 @@
             <span class="result-val"><strong id="final-time">00:00</strong></span>
           </div>
         </div>
+
+        <!-- 랭킹 등록 영역 (자리연습 모드 시 숨김) -->
+        <div id="ranking-section" class="ranking-section">
+          <!-- 1단계: 기록 등록하기 단독 버튼 -->
+          <button id="rank-start-btn" class="rank-start-btn">기록 등록하기</button>
+
+          <!-- 2단계: 터치 시 노출되는 닉네임 입력 폼 -->
+          <div id="rank-input-step" class="rank-form-box hidden">
+            <input type="text" id="nickname-input" class="nickname-input" placeholder="등록할 닉네임 (2~8자)" maxlength="8" autocomplete="off">
+            <button id="submit-rank-btn" class="submit-rank-btn">등록</button>
+          </div>
+        </div>
+
         <div class="modal-btn-group">
           <button id="modal-lobby-btn" class="modal-sub-btn">메인 메뉴</button>
           <button id="restart-btn" class="restart-btn">다시 시작하기</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. 순위표(명예의 전당) 전용 독립 팝업 모달 -->
+    <div id="leaderboard-modal" class="modal hidden">
+      <div class="modal-content leaderboard-modal-box">
+        <div class="leaderboard-modal-header">
+          <h2>🏆 명예의 전당</h2>
+          <button id="close-leaderboard-btn" class="modal-close-icon" aria-label="닫기">&times;</button>
+        </div>
+
+        <!-- 낱말 / 단문 / 장문 탭 전환 바 -->
+        <div class="leaderboard-tabs">
+          <button class="lead-tab-btn active" data-tab="word">낱말연습</button>
+          <button class="lead-tab-btn" data-tab="short">단문연습</button>
+          <button class="lead-tab-btn" data-tab="long">장문연습</button>
+        </div>
+
+        <!-- 실시간 랭킹 테이블 -->
+        <div class="leaderboard-scroll">
+          <table class="leaderboard-table">
+            <thead>
+              <tr>
+                <th>순위</th>
+                <th>닉네임</th>
+                <th>타수</th>
+                <th>정확도</th>
+                <th>시간</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboard-body">
+              <!-- JS 동적 렌더링 -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="modal-btn-group" style="margin-top: 14px;">
+          <button id="close-leaderboard-sub-btn" class="modal-sub-btn" style="width: 100%;">닫기</button>
         </div>
       </div>
     </div>
