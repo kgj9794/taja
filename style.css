@@ -311,6 +311,7 @@ header {
   border-color: #94a3b8;
 }
 
+/* 정사각형 아이콘 버튼 */
 .header-action-btn.icon-btn {
   width: 35px;
   padding: 0;
@@ -823,7 +824,7 @@ header {
   will-change: transform, opacity;
 }
 
-/* 좌측 이전 단어 박스 (외곽선/배경은 단정한 회색 박스 유지) */
+/* 좌측 이전 단어 박스 */
 .h-prev-item {
   opacity: 0.65;
   border-style: dashed;
@@ -835,7 +836,7 @@ header {
   color: #64748b;
 }
 
-/* 좌측 단어 중 틀린 글자만 콕 집어 빨간색 밑줄 표기 */
+/* 좌측 단어 중 실제로 틀린 글자만 빨간색 밑줄 표기 */
 .h-prev-item span.prev-char-wrong {
   color: #ef4444 !important;
   font-weight: 800;
@@ -903,7 +904,6 @@ header {
   user-select: none;
 }
 
-/* 목표 단어/글자 상태 */
 .target-char-done {
   color: #0f172a;
 }
@@ -927,17 +927,14 @@ header {
   padding-top: 10px;
 }
 
-/* 사용자 입력 텍스트 상태 */
 .user-char-correct {
   color: #2563eb;
 }
 
-/* 입력 진행 중인 정상 음소 (빨간색 띄우지 않음) */
 .user-char-typing {
   color: #0f172a;
 }
 
-/* 완전히 잘못 입력된 사용자 글자 빨간색 강조 */
 .user-char-wrong {
   color: #ef4444;
   background-color: #fee2e2;
@@ -1134,12 +1131,12 @@ header {
 }
 
 /* =====================================================================
-   결과 모달
+   모달 공통 레이아웃 & 랭킹/순위표 팝업
    ===================================================================== */
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.45);
+  background: rgba(15, 23, 42, 0.48);
   backdrop-filter: blur(4px);
   display: flex;
   justify-content: center;
@@ -1148,48 +1145,248 @@ header {
 }
 
 .modal.hidden {
-  display: none;
+  display: none !important;
 }
 
 .modal-content {
   background: #ffffff;
-  padding: 32px 38px;
   border-radius: 18px;
   text-align: center;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
-  width: 360px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.14);
+}
+
+.result-modal-box {
+  width: 380px;
+  max-width: 92vw;
+  padding: 28px 24px;
 }
 
 .modal-content h2 {
-  font-size: 1.5rem;
+  font-size: 1.45rem;
   color: #2563eb;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
 .result-stats {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
-  padding: 16px 20px;
-  margin-bottom: 22px;
+  padding: 14px 18px;
+  margin-bottom: 18px;
 }
 
 .result-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 1rem;
+  font-size: 0.95rem;
   color: #475569;
 }
 
 .result-val strong {
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   color: #0f172a;
 }
 
+/* 랭킹 등록 섹션 */
+.ranking-section {
+  margin-bottom: 18px;
+}
+
+.ranking-section.hidden {
+  display: none !important;
+}
+
+/* 1단계: 단독 [기록 등록하기] 버튼 */
+.rank-start-btn {
+  width: 100%;
+  padding: 11px 0;
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.rank-start-btn:hover {
+  background: #1d4ed8;
+}
+
+.rank-start-btn:active {
+  transform: scale(0.98);
+}
+
+.rank-start-btn.hidden {
+  display: none !important;
+}
+
+/* 2단계: 닉네임 입력 및 제출 폼 */
+.rank-form-box {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.rank-form-box.hidden {
+  display: none !important;
+}
+
+.nickname-input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1e293b;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.nickname-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.submit-rank-btn {
+  padding: 10px 16px;
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s ease;
+}
+
+.submit-rank-btn:hover {
+  background: #1d4ed8;
+}
+
+.submit-rank-btn:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* =====================================================================
+   명예의 전당 (순위표) 전용 모달 & 탭
+   ===================================================================== */
+.leaderboard-modal-box {
+  width: 480px;
+  max-width: 94vw;
+  padding: 24px 22px;
+  text-align: left;
+}
+
+.leaderboard-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.leaderboard-modal-header h2 {
+  font-size: 1.35rem;
+  margin-bottom: 0;
+  color: #0f172a;
+}
+
+.modal-close-icon {
+  background: none;
+  border: none;
+  font-size: 1.6rem;
+  line-height: 1;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.modal-close-icon:hover {
+  color: #0f172a;
+}
+
+/* 탭 버튼 그룹 */
+.leaderboard-tabs {
+  display: flex;
+  gap: 6px;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 10px;
+  margin-bottom: 14px;
+}
+
+.lead-tab-btn {
+  flex: 1;
+  padding: 8px 0;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.88rem;
+  font-weight: 700;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.lead-tab-btn:hover {
+  color: #0f172a;
+}
+
+.lead-tab-btn.active {
+  background: #ffffff;
+  color: #2563eb;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.leaderboard-scroll {
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+  text-align: center;
+}
+
+.leaderboard-table th {
+  background: #edf2f7;
+  color: #475569;
+  padding: 8px 4px;
+  font-weight: 700;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.leaderboard-table td {
+  padding: 8px 4px;
+  border-bottom: 1px solid #e2e8f0;
+  color: #334155;
+  font-weight: 600;
+}
+
+.leaderboard-table tr:last-child td {
+  border-bottom: none;
+}
+
+.leaderboard-table tr.top-1 td { color: #b45309; font-weight: 800; background: #fffbeb; }
+.leaderboard-table tr.top-2 td { color: #475569; font-weight: 800; background: #f1f5f9; }
+.leaderboard-table tr.top-3 td { color: #9a3412; font-weight: 800; background: #fff7ed; }
+
+/* 모달 하단 버튼 */
 .modal-btn-group {
   display: flex;
   gap: 8px;
@@ -1197,12 +1394,12 @@ header {
 
 .modal-sub-btn {
   flex: 1;
-  padding: 12px 0;
+  padding: 11px 0;
   background: #f1f5f9;
   color: #475569;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -1215,12 +1412,12 @@ header {
 
 .restart-btn {
   flex: 1.5;
-  padding: 12px 0;
+  padding: 11px 0;
   background: #2563eb;
   color: white;
   border: none;
   border-radius: 8px;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s ease;
