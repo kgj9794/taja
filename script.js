@@ -1,4 +1,10 @@
 /* =====================================================================
+   0. 구글 스프레드시트 연동 설정 (보안 토큰 적용)
+   ===================================================================== */
+const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxVz8hZV1rT394HB8Qxx54rVBqY64tKkKOjssFEtI5fcpxhlScy55FPVKX2NsdU7Zuw/exec";
+const API_SECRET = "typing_app_secure_token_2026";
+
+/* =====================================================================
    1. 한글 음소 분해 및 유효 순타수(Net Strokes) 정밀 계산 모듈
    ===================================================================== */
 const CHO_LIST = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
@@ -65,7 +71,6 @@ function decomposeChar(char) {
   return [{ type: 'other', char: char, stroke: getCharStrokes(char) }];
 }
 
-/* 입력 중인 음소가 목표 음절의 올바른 입력 조합 단계인지 검증 */
 function isCharPrefix(targetChar, inputChar) {
   if (!targetChar || !inputChar) return false;
   if (targetChar === inputChar) return true;
@@ -276,7 +281,7 @@ function updateTargetKeyHighlight() {
     el.classList.remove("key-target");
   });
 
-  if (!isKeyboardVisible || isCountingDown || currentIndex >= activeList.length || !resultModal.classList.contains("hidden") || !lobbyScreen.classList.contains("hidden")) {
+  if (!isKeyboardVisible || isCountingDown || currentIndex >= activeList.length || !resultModal.classList.contains("hidden") || !leaderboardModal.classList.contains("hidden") || !lobbyScreen.classList.contains("hidden")) {
     return;
   }
 
@@ -544,8 +549,12 @@ let currentLongKey = "stars";
 let activeList = [];
 let currentIndex = 0;
 
-let hasKeyError = false; // 자리연습 오타 발생 여부 플래그
-let lastResult = null;   // 직전 제출된 결과 { target, input } 보관 (좌측 레일 렌더링용)
+let hasKeyError = false;
+let lastResult = null;
+let lastFinalStats = { cpm: 0, accuracy: 100, timeSeconds: 0 };
+
+let isSubmittingRank = false;
+let currentLeaderboardTab = "word";
 
 let sentenceStartTime = null;
 let currentSentenceStrokes = 0;
@@ -583,6 +592,7 @@ const typingContainer = document.getElementById("typing-container");
 const homeLogo = document.getElementById("home-logo");
 const lobbyBackBtn = document.getElementById("lobby-back-btn");
 const modalLobbyBtn = document.getElementById("modal-lobby-btn");
+const headerRankBtn = document.getElementById("header-rank-btn");
 
 const modeCards = document.querySelectorAll(".mode-card");
 const modeBtns = document.querySelectorAll(".mode-btn");
@@ -634,11 +644,25 @@ const typingInput = document.getElementById("typing-input");
 const keyboardWrapper = document.getElementById("keyboard-wrapper");
 const toggleKeyboardBtn = document.getElementById("toggle-keyboard-btn");
 
+// 3. 결과 모달 및 랭킹 등록
 const resultModal = document.getElementById("result-modal");
 const finalCpm = document.getElementById("final-cpm");
 const finalAcc = document.getElementById("final-acc");
 const finalTime = document.getElementById("final-time");
 const restartBtn = document.getElementById("restart-btn");
+
+const rankingSection = document.getElementById("ranking-section");
+const rankStartBtn = document.getElementById("rank-start-btn");
+const rankInputStep = document.getElementById("rank-input-step");
+const nicknameInput = document.getElementById("nickname-input");
+const submitRankBtn = document.getElementById("submit-rank-btn");
+
+// 4. 독립 순위표(명예의 전당) 모달
+const leaderboardModal = document.getElementById("leaderboard-modal");
+const closeLeaderboardBtn = document.getElementById("close-leaderboard-btn");
+const closeLeaderboardSubBtn = document.getElementById("close-leaderboard-sub-btn");
+const leadTabBtns = document.querySelectorAll(".lead-tab-btn");
+const leaderboardBody = document.getElementById("leaderboard-body");
 
 /* =====================================================================
    6. 시간 제어 및 듀얼 롤링 넘버
@@ -944,6 +968,7 @@ function animateAppClose() {
   if (countdownTimer) clearInterval(countdownTimer);
   typingInput.disabled = true;
   resultModal.classList.add("hidden");
+  leaderboardModal.classList.add("hidden");
 
   const targetCard = document.querySelector(`.mode-card[data-mode="${currentMode}"]`) ||
     lastSelectedCard ||
@@ -1037,6 +1062,7 @@ function initPractice() {
   resetTimer();
   hasKeyError = false;
   lastResult = null;
+  isSubmittingRank = false;
 
   // 1. 모드별 뷰 토글
   if (currentMode === "key" || currentMode === "word") {
@@ -1100,6 +1126,7 @@ function initPractice() {
   typingInput.value = "";
   practiceBoard.classList.remove("input-error");
   resultModal.classList.add("hidden");
+  leaderboardModal.classList.add("hidden");
 
   clearAllActiveKeys();
   renderBoard();
@@ -1138,7 +1165,6 @@ function renderBoard() {
   const inputLen = currentInput.length;
 
   if (currentMode === "key") {
-    // 1. 좌측 레일: 직전 통과한 글자 표시 (자리연습은 정답을 쳐야만 통과하므로 항상 정상)
     if (currentIndex > 0 && lastResult) {
       hPrevItem.innerHTML = `<span>${lastResult.target}</span>`;
       hPrevItem.style.visibility = "visible";
@@ -1147,17 +1173,14 @@ function renderBoard() {
       hPrevItem.style.visibility = "hidden";
     }
 
-    // [자리연습]: 오타 시 입력할 글자 자체만 빨간색으로 변경
     hTargetDisplay.innerHTML = "";
     const span = document.createElement("span");
     span.textContent = target;
     span.className = hasKeyError ? "target-char-error" : "target-char-pending";
     hTargetDisplay.appendChild(span);
 
-    // [자리연습]: 오타는 입력창에 남기지 않고 커서만 표시
     hUserDisplay.innerHTML = '<span class="blinking-cursor">|</span>';
 
-    // 우측 큐 레일
     hQueueList.innerHTML = "";
     const upcoming = activeList.slice(currentIndex + 1, currentIndex + 6);
     upcoming.forEach((item) => {
@@ -1168,7 +1191,6 @@ function renderBoard() {
     });
 
   } else if (currentMode === "word") {
-    // 1. 좌측 레일: 직전 단어 중 실제로 틀리게 제출된 '그 글자만' 콕 집어 빨간색 표기
     if (currentIndex > 0 && lastResult) {
       const prevTarget = lastResult.target;
       const prevInput = lastResult.input;
@@ -1182,7 +1204,6 @@ function renderBoard() {
         if (tChar === iChar) {
           prevHtml += `<span>${tChar}</span>`;
         } else {
-          // 오타 글자만 빨간색 밑줄 처리
           const errChar = iChar || tChar;
           prevHtml += `<span class="prev-char-wrong">${errChar}</span>`;
         }
@@ -1194,24 +1215,19 @@ function renderBoard() {
       hPrevItem.style.visibility = "hidden";
     }
 
-    // [낱말연습]: 목표 단어 렌더링
     hTargetDisplay.innerHTML = "";
     for (let i = 0; i < target.length; i++) {
       const span = document.createElement("span");
       span.textContent = target[i];
 
       if (i < inputLen - 1) {
-        // 이미 입력이 끝난 이전 글자가 완전히 다르면 빨간색
         span.className = (currentInput[i] === target[i]) ? "target-char-done" : "target-char-error";
       } else if (i === inputLen - 1) {
-        // 현재 입력 진행 중인 글자
         if (currentInput[i] === target[i]) {
           span.className = "target-char-done";
         } else if (isCharPrefix(target[i], currentInput[i])) {
-          // 올바른 자모 조합 중에는 절대 빨간색으로 띄우지 않음
           span.className = "target-char-pending";
         } else {
-          // 아예 다른 엉뚱한 키를 쳤을 때만 빨간색
           span.className = "target-char-error";
         }
       } else {
@@ -1220,24 +1236,19 @@ function renderBoard() {
       hTargetDisplay.appendChild(span);
     }
 
-    // [낱말연습]: 사용자 입력 텍스트 렌더링
     hUserDisplay.innerHTML = "";
     for (let i = 0; i < inputLen; i++) {
       const span = document.createElement("span");
       span.textContent = currentInput[i];
 
       if (i < inputLen - 1) {
-        // 이미 넘어간 글자: 틀리면 빨간색
         span.className = (i < target.length && currentInput[i] === target[i]) ? "user-char-correct" : "user-char-wrong";
       } else {
-        // 현재 입력 중인 글자
         if (i < target.length && currentInput[i] === target[i]) {
           span.className = "user-char-correct";
         } else if (i < target.length && isCharPrefix(target[i], currentInput[i])) {
-          // 올바르게 타이핑 중인 글자(검정/기본)
           span.className = "user-char-typing";
         } else {
-          // 아예 다르게 입력한 글자만 빨간색
           span.className = "user-char-wrong";
         }
       }
@@ -1249,7 +1260,6 @@ function renderBoard() {
     cursor.textContent = "|";
     hUserDisplay.appendChild(cursor);
 
-    // 우측 큐 레일
     hQueueList.innerHTML = "";
     const upcoming = activeList.slice(currentIndex + 1, currentIndex + 6);
     upcoming.forEach((item) => {
@@ -1260,7 +1270,6 @@ function renderBoard() {
     });
 
   } else {
-    // 3. 단문/장문 수직 피드 뷰 렌더링
     targetDisplay.innerHTML = "";
     for (let i = 0; i < target.length; i++) {
       const span = document.createElement("span");
@@ -1336,7 +1345,6 @@ function handleNext() {
     currentInput = targetText;
   }
 
-  // 직전 단어의 최종 입력 결과 저장 (중간에 지우고 고쳤더라도 최종 단어가 맞으면 정상 처리)
   lastResult = {
     target: targetText,
     input: currentInput
@@ -1483,6 +1491,26 @@ function finishPractice() {
   finalCpm.textContent = avgCpm;
   finalAcc.textContent = acc;
   finalTime.textContent = formatTime(elapsedSeconds);
+
+  lastFinalStats = {
+    cpm: avgCpm,
+    accuracy: acc,
+    timeSeconds: elapsedSeconds
+  };
+
+  // 자리연습 모드는 랭킹 등록 제외
+  if (currentMode === "key") {
+    rankingSection.classList.add("hidden");
+  } else {
+    rankingSection.classList.remove("hidden");
+    rankStartBtn.classList.remove("hidden");
+    rankInputStep.classList.add("hidden");
+    nicknameInput.value = "";
+    submitRankBtn.disabled = false;
+    submitRankBtn.textContent = "등록";
+    isSubmittingRank = false;
+  }
+
   resultModal.classList.remove("hidden");
   clearAllActiveKeys();
   updateTargetKeyHighlight();
@@ -1498,18 +1526,22 @@ function triggerInputError() {
    10. 자동 포커스 유지 & 입력 제어
    ===================================================================== */
 function ensureInputFocus() {
-  if (!typingInput.disabled && !isCountingDown && resultModal.classList.contains("hidden") && !typingContainer.classList.contains("hidden")) {
+  if (!typingInput.disabled &&
+      !isCountingDown &&
+      resultModal.classList.contains("hidden") &&
+      leaderboardModal.classList.contains("hidden") &&
+      !typingContainer.classList.contains("hidden")) {
     typingInput.focus();
   }
 }
 
 document.addEventListener("click", (e) => {
-  if (e.target.closest("button") || e.target.closest("select") || e.target.closest(".modal-content") || !lobbyScreen.classList.contains("hidden")) return;
+  if (e.target.closest("button") || e.target.closest("select") || e.target.closest("input") || e.target.closest(".modal-content") || !lobbyScreen.classList.contains("hidden")) return;
   ensureInputFocus();
 });
 
 window.addEventListener("keydown", (e) => {
-  if (isCountingDown || !resultModal.classList.contains("hidden") || !lobbyScreen.classList.contains("hidden")) return;
+  if (isCountingDown || !resultModal.classList.contains("hidden") || !leaderboardModal.classList.contains("hidden") || !lobbyScreen.classList.contains("hidden")) return;
   if (e.target !== typingInput && !e.ctrlKey && !e.metaKey && !e.altKey && e.key.length === 1) {
     ensureInputFocus();
   }
@@ -1551,7 +1583,6 @@ typingInput.addEventListener("input", () => {
 
   currentSentenceStrokes = getValidStrokeCount(targetText, currentInput);
 
-  // [자리연습 판정]: 오타 시 입력값 미반영(비움) + 목표 글자 빨간색 강조
   if (currentMode === "key") {
     if (currentInput.length >= 1) {
       const inputChar = currentInput[currentInput.length - 1];
@@ -1690,7 +1721,148 @@ setInterval(() => {
 }, 50);
 
 /* =====================================================================
-   13. 메뉴 전환 및 하단 전체(#practice-body) 좌우 스와이프 트랜지션
+   13. 구글 스프레드시트 랭킹 연동 및 독립 순위표 모달 제어
+   ===================================================================== */
+
+// [1단계]: 기록 등록하기 버튼 클릭 시 닉네임 입력 폼 노출
+rankStartBtn.addEventListener("click", () => {
+  rankStartBtn.classList.add("hidden");
+  rankInputStep.classList.remove("hidden");
+  nicknameInput.value = "";
+  nicknameInput.focus();
+});
+
+// [2단계]: 닉네임 등록 실행
+async function submitRank() {
+  if (isSubmittingRank) return; // 중복 제출 차단
+
+  const nickname = nicknameInput.value.trim();
+  if (nickname.length < 2) {
+    alert("닉네임을 2자 이상 입력해주세요.");
+    nicknameInput.focus();
+    return;
+  }
+
+  isSubmittingRank = true;
+  submitRankBtn.disabled = true;
+  submitRankBtn.textContent = "등록 중...";
+
+  const payload = {
+    key: API_SECRET, // 보안 토큰 동봉
+    mode: currentMode,
+    detail: currentMode === "long" ? currentLongKey : "-",
+    nickname: nickname,
+    cpm: lastFinalStats.cpm,
+    accuracy: lastFinalStats.accuracy,
+    timeSeconds: lastFinalStats.timeSeconds
+  };
+
+  try {
+    await fetch(GAS_WEB_APP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify(payload)
+    });
+
+    // 불필요한 완료 메시지 없이 즉시 결과 모달을 닫고 순위표 팝업으로 직행
+    resultModal.classList.add("hidden");
+    openLeaderboardModal(currentMode);
+    isSubmittingRank = false;
+
+  } catch (err) {
+    alert("랭킹 등록 중 오류가 발생했습니다.");
+    submitRankBtn.disabled = false;
+    submitRankBtn.textContent = "등록";
+    isSubmittingRank = false;
+  }
+}
+
+// 닉네임 입력창 엔터 시 중복 전송 방지(한글 IME 조합 상태 배제)
+nicknameInput.addEventListener("keydown", (e) => {
+  if (e.isComposing) return;
+  if (e.key === "Enter") {
+    e.preventDefault();
+    submitRank();
+  }
+});
+submitRankBtn.addEventListener("click", submitRank);
+
+// 순위표(명예의 전당) 모달 열기 및 탭 갱신
+function openLeaderboardModal(mode = "word") {
+  currentLeaderboardTab = mode;
+  leaderboardModal.classList.remove("hidden");
+  updateLeaderboardTabsUI(mode);
+  loadLeaderboard(mode);
+}
+
+function closeLeaderboardModal() {
+  leaderboardModal.classList.add("hidden");
+  ensureInputFocus();
+}
+
+function updateLeaderboardTabsUI(mode) {
+  leadTabBtns.forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.tab === mode);
+  });
+}
+
+// 스프레드시트 순위 데이터 조회 (보안 키 검증 포함)
+async function loadLeaderboard(mode) {
+  leaderboardBody.innerHTML = '<tr><td colspan="5" style="padding: 24px 0; color: #64748b;">순위를 불러오는 중...</td></tr>';
+
+  try {
+    const res = await fetch(`${GAS_WEB_APP_URL}?mode=${mode}&key=${API_SECRET}`);
+    const data = await res.json();
+
+    if (!data || data.length === 0) {
+      leaderboardBody.innerHTML = '<tr><td colspan="5" style="padding: 24px 0; color: #94a3b8; font-weight: 600;">데이터가 없습니다</td></tr>';
+      return;
+    }
+
+    leaderboardBody.innerHTML = "";
+    data.forEach((row, idx) => {
+      const tr = document.createElement("tr");
+      if (idx === 0) tr.className = "top-1";
+      if (idx === 1) tr.className = "top-2";
+      if (idx === 2) tr.className = "top-3";
+
+      const rankBadge = idx === 0 ? "🥇 1" : idx === 1 ? "🥈 2" : idx === 2 ? "🥉 3" : idx + 1;
+
+      tr.innerHTML = `
+        <td>${rankBadge}</td>
+        <td>${row.nickname}</td>
+        <td>${row.cpm}</td>
+        <td>${row.accuracy}%</td>
+        <td>${formatTime(row.timeSeconds)}</td>
+      `;
+      leaderboardBody.appendChild(tr);
+    });
+  } catch (err) {
+    leaderboardBody.innerHTML = '<tr><td colspan="5" style="padding: 24px 0; color: #ef4444; font-weight: 600;">순위 불러오기 실패</td></tr>';
+  }
+}
+
+// 순위표 탭(낱말 / 단문 / 장문) 전환 이벤트
+leadTabBtns.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const targetTab = btn.dataset.tab;
+    if (currentLeaderboardTab === targetTab) return;
+    currentLeaderboardTab = targetTab;
+    updateLeaderboardTabsUI(targetTab);
+    loadLeaderboard(targetTab);
+  });
+});
+
+// 상단 헤더 트로피(🏆) 아이콘 클릭 시 순위표 오픈
+headerRankBtn.addEventListener("click", () => {
+  openLeaderboardModal(currentMode === "key" ? "word" : currentMode);
+});
+
+closeLeaderboardBtn.addEventListener("click", closeLeaderboardModal);
+closeLeaderboardSubBtn.addEventListener("click", closeLeaderboardModal);
+
+/* =====================================================================
+   14. 메뉴 전환 및 하단 전체(#practice-body) 좌우 스와이프 트랜지션
    ===================================================================== */
 function switchModeWithSlide(newMode) {
   if (isModeSwitching || newMode === currentMode) return;
@@ -1759,7 +1931,7 @@ songSelect.addEventListener("change", (e) => {
 restartBtn.addEventListener("click", initPractice);
 
 /* =====================================================================
-   14. 로딩 화면 해제 및 초기화
+   15. 로딩 화면 해제 및 초기화
    ===================================================================== */
 window.addEventListener("DOMContentLoaded", () => {
   updateKeyboardVisibilityUI();
