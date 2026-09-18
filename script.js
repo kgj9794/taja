@@ -100,7 +100,208 @@ function parseMultiline(text) {
 }
 
 /* =====================================================================
-   2. 연습 데이터 세트
+   2. 두벌식 가상 키보드 매핑 및 다음 타깃 키 판별 모듈
+   ===================================================================== */
+const CHO_KEY_MAP = {
+  'ㄱ': [{ code: 'KeyR', shift: false }],
+  'ㄲ': [{ code: 'KeyR', shift: true }],
+  'ㄴ': [{ code: 'KeyS', shift: false }],
+  'ㄷ': [{ code: 'KeyE', shift: false }],
+  'ㄸ': [{ code: 'KeyE', shift: true }],
+  'ㄹ': [{ code: 'KeyF', shift: false }],
+  'ㅁ': [{ code: 'KeyA', shift: false }],
+  'ㅂ': [{ code: 'KeyQ', shift: false }],
+  'ㅃ': [{ code: 'KeyQ', shift: true }],
+  'ㅅ': [{ code: 'KeyT', shift: false }],
+  'ㅆ': [{ code: 'KeyT', shift: true }],
+  'ㅇ': [{ code: 'KeyD', shift: false }],
+  'ㅈ': [{ code: 'KeyW', shift: false }],
+  'ㅉ': [{ code: 'KeyW', shift: true }],
+  'ㅊ': [{ code: 'KeyC', shift: false }],
+  'ㅋ': [{ code: 'KeyZ', shift: false }],
+  'ㅌ': [{ code: 'KeyX', shift: false }],
+  'ㅍ': [{ code: 'KeyV', shift: false }],
+  'ㅎ': [{ code: 'KeyG', shift: false }]
+};
+
+const JUNG_KEY_MAP = {
+  'ㅏ': [{ code: 'KeyK', shift: false }],
+  'ㅐ': [{ code: 'KeyO', shift: false }],
+  'ㅑ': [{ code: 'KeyI', shift: false }],
+  'ㅒ': [{ code: 'KeyO', shift: true }],
+  'ㅓ': [{ code: 'KeyJ', shift: false }],
+  'ㅔ': [{ code: 'KeyP', shift: false }],
+  'ㅕ': [{ code: 'KeyU', shift: false }],
+  'ㅖ': [{ code: 'KeyP', shift: true }],
+  'ㅗ': [{ code: 'KeyH', shift: false }],
+  'ㅘ': [{ code: 'KeyH', shift: false }, { code: 'KeyK', shift: false }],
+  'ㅙ': [{ code: 'KeyH', shift: false }, { code: 'KeyO', shift: false }],
+  'ㅚ': [{ code: 'KeyH', shift: false }, { code: 'KeyL', shift: false }],
+  'ㅛ': [{ code: 'KeyY', shift: false }],
+  'ㅜ': [{ code: 'KeyN', shift: false }],
+  'ㅝ': [{ code: 'KeyN', shift: false }, { code: 'KeyJ', shift: false }],
+  'ㅞ': [{ code: 'KeyN', shift: false }, { code: 'KeyP', shift: false }],
+  'ㅟ': [{ code: 'KeyN', shift: false }, { code: 'KeyL', shift: false }],
+  'ㅠ': [{ code: 'KeyB', shift: false }],
+  'ㅡ': [{ code: 'KeyM', shift: false }],
+  'ㅢ': [{ code: 'KeyM', shift: false }, { code: 'KeyL', shift: false }],
+  'ㅣ': [{ code: 'KeyL', shift: false }]
+};
+
+const JONG_KEY_MAP = [
+  [],
+  [{ code: 'KeyR', shift: false }],
+  [{ code: 'KeyR', shift: true }],
+  [{ code: 'KeyR', shift: false }, { code: 'KeyT', shift: false }],
+  [{ code: 'KeyS', shift: false }],
+  [{ code: 'KeyS', shift: false }, { code: 'KeyW', shift: false }],
+  [{ code: 'KeyS', shift: false }, { code: 'KeyG', shift: false }],
+  [{ code: 'KeyE', shift: false }],
+  [{ code: 'KeyF', shift: false }],
+  [{ code: 'KeyF', shift: false }, { code: 'KeyR', shift: false }],
+  [{ code: 'KeyF', shift: false }, { code: 'KeyA', shift: false }],
+  [{ code: 'KeyF', shift: false }, { code: 'KeyQ', shift: false }],
+  [{ code: 'KeyF', shift: false }, { code: 'KeyT', shift: false }],
+  [{ code: 'KeyF', shift: false }, { code: 'KeyX', shift: false }],
+  [{ code: 'KeyF', shift: false }, { code: 'KeyV', shift: false }],
+  [{ code: 'KeyF', shift: false }, { code: 'KeyG', shift: false }],
+  [{ code: 'KeyA', shift: false }],
+  [{ code: 'KeyQ', shift: false }],
+  [{ code: 'KeyQ', shift: false }, { code: 'KeyT', shift: false }],
+  [{ code: 'KeyT', shift: false }],
+  [{ code: 'KeyT', shift: true }],
+  [{ code: 'KeyD', shift: false }],
+  [{ code: 'KeyW', shift: false }],
+  [{ code: 'KeyC', shift: false }],
+  [{ code: 'KeyZ', shift: false }],
+  [{ code: 'KeyX', shift: false }],
+  [{ code: 'KeyV', shift: false }],
+  [{ code: 'KeyG', shift: false }]
+];
+
+const STANDALONE_JAMO_MAP = {
+  ...CHO_KEY_MAP,
+  ...JUNG_KEY_MAP,
+  'ㄳ': [{ code: 'KeyR', shift: false }, { code: 'KeyT', shift: false }],
+  'ㄵ': [{ code: 'KeyS', shift: false }, { code: 'KeyW', shift: false }],
+  'ㄶ': [{ code: 'KeyS', shift: false }, { code: 'KeyG', shift: false }],
+  'ㄺ': [{ code: 'KeyF', shift: false }, { code: 'KeyR', shift: false }],
+  'ㄻ': [{ code: 'KeyF', shift: false }, { code: 'KeyA', shift: false }],
+  'ㄼ': [{ code: 'KeyF', shift: false }, { code: 'KeyQ', shift: false }],
+  'ㄽ': [{ code: 'KeyF', shift: false }, { code: 'KeyT', shift: false }],
+  'ㄾ': [{ code: 'KeyF', shift: false }, { code: 'KeyX', shift: false }],
+  'ㄿ': [{ code: 'KeyF', shift: false }, { code: 'KeyV', shift: false }],
+  'ㅀ': [{ code: 'KeyF', shift: false }, { code: 'KeyG', shift: false }],
+  'ㅄ': [{ code: 'KeyQ', shift: false }, { code: 'KeyT', shift: false }]
+};
+
+const SPECIAL_CHAR_MAP = {
+  ' ': { code: 'Space', shift: false },
+  '.': { code: 'Period', shift: false },
+  ',': { code: 'Comma', shift: false },
+  '!': { code: 'Digit1', shift: true },
+  '@': { code: 'Digit2', shift: true },
+  '#': { code: 'Digit3', shift: true },
+  '$': { code: 'Digit4', shift: true },
+  '%': { code: 'Digit5', shift: true },
+  '^': { code: 'Digit6', shift: true },
+  '&': { code: 'Digit7', shift: true },
+  '*': { code: 'Digit8', shift: true },
+  '(': { code: 'Digit9', shift: true },
+  ')': { code: 'Digit0', shift: true },
+  '-': { code: 'Minus', shift: false },
+  '_': { code: 'Minus', shift: true },
+  '=': { code: 'Equal', shift: false },
+  '+': { code: 'Equal', shift: true },
+  '~': { code: 'Backquote', shift: true },
+  '`': { code: 'Backquote', shift: false },
+  '?': { code: 'Slash', shift: true },
+  '/': { code: 'Slash', shift: false }
+};
+for (let i = 0; i <= 9; i++) {
+  SPECIAL_CHAR_MAP[i.toString()] = { code: `Digit${i}`, shift: false };
+}
+
+function getKeystrokes(text) {
+  if (!text) return [];
+  const keys = [];
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const code = char.charCodeAt(0);
+
+    if (code >= 0xAC00 && code <= 0xD7A3) {
+      const syllableIndex = code - 0xAC00;
+      const jong = syllableIndex % 28;
+      const jung = Math.floor((syllableIndex - jong) / 28) % 21;
+      const cho = Math.floor(Math.floor((syllableIndex - jong) / 28) / 21);
+
+      const choChar = CHO_LIST[cho];
+      const jungChar = JUNG_LIST[jung];
+
+      if (CHO_KEY_MAP[choChar]) keys.push(...CHO_KEY_MAP[choChar]);
+      if (JUNG_KEY_MAP[jungChar]) keys.push(...JUNG_KEY_MAP[jungChar]);
+      if (jong > 0 && JONG_KEY_MAP[jong]) keys.push(...JONG_KEY_MAP[jong]);
+    } else if (STANDALONE_JAMO_MAP[char]) {
+      keys.push(...STANDALONE_JAMO_MAP[char]);
+    } else if (SPECIAL_CHAR_MAP[char]) {
+      keys.push(SPECIAL_CHAR_MAP[char]);
+    } else if (/[a-zA-Z]/.test(char)) {
+      const isUpper = char >= 'A' && char <= 'Z';
+      keys.push({ code: `Key${char.toUpperCase()}`, shift: isUpper });
+    }
+  }
+  return keys;
+}
+
+function updateTargetKeyHighlight() {
+  document.querySelectorAll(".key.key-target").forEach((el) => {
+    el.classList.remove("key-target");
+  });
+
+  if (!isKeyboardVisible || isCountingDown || currentIndex >= activeList.length || !resultModal.classList.contains("hidden") || !lobbyScreen.classList.contains("hidden")) {
+    return;
+  }
+
+  const targetText = activeList[currentIndex] || "";
+  const currentInput = typingInput ? typingInput.value : "";
+
+  const targetKeys = getKeystrokes(targetText);
+  const inputKeys = getKeystrokes(currentInput);
+
+  let nextKey = null;
+
+  let isPrefix = true;
+  for (let i = 0; i < inputKeys.length; i++) {
+    if (!targetKeys[i] || inputKeys[i].code !== targetKeys[i].code || inputKeys[i].shift !== targetKeys[i].shift) {
+      isPrefix = false;
+      break;
+    }
+  }
+
+  if (isPrefix) {
+    if (inputKeys.length < targetKeys.length) {
+      nextKey = targetKeys[inputKeys.length];
+    } else if (currentMode === "word" && currentInput.length === targetText.length) {
+      nextKey = { code: "Space", shift: false };
+    } else if (currentMode !== "key" && currentInput.length >= targetText.length) {
+      nextKey = { code: "Enter", shift: false };
+    }
+  } else {
+    nextKey = { code: "Backspace", shift: false };
+  }
+
+  if (nextKey) {
+    const keyEl = document.querySelector(`.key[data-code="${nextKey.code}"]`);
+    if (keyEl) keyEl.classList.add("key-target");
+    if (nextKey.shift) {
+      const shiftEl = document.querySelector('.key[data-code="ShiftLeft"]');
+      if (shiftEl) shiftEl.classList.add("key-target");
+    }
+  }
+}
+
+/* =====================================================================
+   3. 연습 데이터 세트
    ===================================================================== */
 const PRACTICE_DATA = {
   key: {
@@ -114,8 +315,18 @@ const PRACTICE_DATA = {
     "number": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]
   },
   word: [
-    "하늘", "바람", "구름", "나무", "바다", "태양", "달빛", "별빛", "마음", "사랑",
-    "컴퓨터", "키보드", "모니터", "인터넷", "소프트웨어", "프로그래밍", "자바스크립트", "알고리즘", "데이터", "네트워크"
+    "사과", "하늘", "바다", "구름", "나무", "햇살", "바람", "가을", "겨울", "행복",
+    "친구", "가족", "소풍", "우산", "기차", "버스", "커피", "우유", "산책", "음악",
+    "영화", "사진", "편지", "선물", "미소", "마음", "사랑", "시계", "안경", "지갑",
+    "신발", "가방", "의자", "책상", "거울", "수건", "비누", "치약", "접시", "보리",
+    "감자", "양파", "당근", "포도", "딸기", "수박", "자전거", "비행기", "도서관", "정류장",
+    "운동장", "놀이터", "신호등", "지하철", "이어폰", "텀블러", "그림책", "초콜릿", "손거울", "머그컵",
+    "메모지", "세탁기", "청소기", "선풍기", "주전자", "손수건", "목도리", "털모자", "운동화", "슬리퍼",
+    "우체국", "소방서", "경찰서", "미술관", "박물관", "수목원", "동물원", "백화점", "편의점", "세탁소",
+    "미용실", "수영장", "스마트폰", "다이어리", "손목시계", "블루투스", "여행가방", "배낭여행", "모래놀이", "회전목마",
+    "미끄럼틀", "그네타기", "횡단보도", "시내버스", "마을버스", "자전거길", "스케치북", "색연필통", "형광펜촉", "동화책장",
+    "종이접기", "비눗방울", "따뜻한밥", "아침햇살", "저녁노을", "새벽공기", "초록식물", "보름달빛", "가을하늘", "시원한물",
+    "녹차한잔", "카페라떼", "치즈피자", "김치볶음", "된장찌개", "순두부찌", "소금빵버", "단팥빵향", "군만두바", "토스트구"
   ],
   short: [
     "중요한 것은 꺾이지 않는 마음.",
@@ -306,7 +517,7 @@ const PRACTICE_DATA = {
 };
 
 /* =====================================================================
-   3. 상태 관리
+   4. 상태 관리
    ===================================================================== */
 const MODE_ORDER = ["key", "word", "short", "long"];
 let currentMode = "key";
@@ -330,7 +541,6 @@ let startTime = null;
 let elapsedSeconds = 0;
 let isTimerRunning = false;
 
-// 브라우저 localStorage에서 키보드 표시 설정 복원 (기본값: true)
 const KEYBOARD_STORAGE_KEY = "typing_practice_keyboard_visible";
 let isKeyboardVisible = localStorage.getItem(KEYBOARD_STORAGE_KEY) !== "false";
 
@@ -344,7 +554,7 @@ let isModeSwitching = false;
 let lastSelectedCard = null;
 
 /* =====================================================================
-   4. DOM 요소
+   5. DOM 요소
    ===================================================================== */
 const loadingScreen = document.getElementById("loading-screen");
 const lobbyScreen = document.getElementById("lobby-screen");
@@ -356,8 +566,8 @@ const modalLobbyBtn = document.getElementById("modal-lobby-btn");
 const modeCards = document.querySelectorAll(".mode-card");
 const modeBtns = document.querySelectorAll(".mode-btn");
 
-// 하단 통합 슬라이드 대상
 const practiceBody = document.getElementById("practice-body");
+const dashboard = document.getElementById("dashboard");
 
 const subMenuBar = document.getElementById("sub-menu-bar");
 const subBtns = document.querySelectorAll(".sub-btn");
@@ -379,14 +589,25 @@ const progressPercent = document.getElementById("progress-percent");
 const progressBar = document.getElementById("progress-bar");
 
 const practiceBoard = document.getElementById("practice-board");
+
+// 1. 수평 컨베이어 뷰
+const horizontalView = document.getElementById("horizontal-view");
+const hPrevItem = document.getElementById("h-prev-item");
+const hSlotCurrent = document.getElementById("h-slot-current");
+const hTargetDisplay = document.getElementById("h-target-display");
+const hUserDisplay = document.getElementById("h-user-display");
+const hQueueList = document.getElementById("h-queue-list");
+
+// 2. 수직 3단 피드 뷰
+const verticalView = document.getElementById("vertical-view");
 const slotCurrent = document.getElementById("slot-current");
 const slotNext = document.getElementById("slot-next");
 const slotAfter = document.getElementById("slot-after");
-
 const targetDisplay = document.getElementById("target-display");
 const userDisplay = document.getElementById("user-display");
 const nextDisplay = document.getElementById("next-display");
 const afterDisplay = document.getElementById("after-display");
+
 const typingInput = document.getElementById("typing-input");
 
 const keyboardWrapper = document.getElementById("keyboard-wrapper");
@@ -399,7 +620,7 @@ const finalTime = document.getElementById("final-time");
 const restartBtn = document.getElementById("restart-btn");
 
 /* =====================================================================
-   5. 시간 제어 및 듀얼 롤링 넘버
+   6. 시간 제어 및 듀얼 롤링 넘버
    ===================================================================== */
 function formatTime(seconds) {
   const m = Math.floor(seconds / 60).toString().padStart(2, "0");
@@ -487,7 +708,7 @@ function resetTimer() {
 }
 
 /* =====================================================================
-   6. 정확도 실시간 계산 모듈
+   7. 정확도 실시간 계산 모듈
    ===================================================================== */
 function getCurrentAccuracy() {
   const targetText = activeList[currentIndex] || "";
@@ -532,7 +753,7 @@ function updateStats() {
 }
 
 /* =====================================================================
-   7. 3초 카운트다운 제어
+   8. 3초 카운트다운 제어
    ===================================================================== */
 function triggerCountdown(onFinish) {
   if (countdownTimer) {
@@ -578,6 +799,7 @@ function triggerCountdown(onFinish) {
         typingInput.disabled = false;
         ensureInputFocus();
         startTimer();
+        updateTargetKeyHighlight();
         if (onFinish) onFinish();
       }, 200);
     }
@@ -585,7 +807,7 @@ function triggerCountdown(onFinish) {
 }
 
 /* =====================================================================
-   8. 정밀 좌표 기반 iOS 모핑 트랜지션
+   9. 정밀 좌표 기반 iOS 모핑 트랜지션
    ===================================================================== */
 function animateAppOpen(card) {
   if (isTransitioning) return;
@@ -793,25 +1015,46 @@ function animateAppClose() {
 function initPractice() {
   resetTimer();
 
+  // 1. 모드별 뷰 토글
+  if (currentMode === "key" || currentMode === "word") {
+    horizontalView.classList.remove("hidden");
+    verticalView.classList.add("hidden");
+    hPrevItem.textContent = "";
+    hPrevItem.style.visibility = "hidden";
+  } else {
+    horizontalView.classList.add("hidden");
+    verticalView.classList.remove("hidden");
+  }
+
+  // 2. 자리연습 시 현재 타수 숨김 및 2열 대시보드 전환
+  if (currentMode === "key") {
+    if (dashboard) dashboard.classList.add("hide-cpm");
+  } else {
+    if (dashboard) dashboard.classList.remove("hide-cpm");
+  }
+
+  // 3. 데이터 세트 구성
   if (currentMode === "key") {
     subMenuBar.style.display = "flex";
     songSelectBar.style.display = "none";
-    activeList = shuffle([...PRACTICE_DATA.key[currentSubPos]]);
-  } else if (currentMode === "long") {
+    const pool = PRACTICE_DATA.key[currentSubPos] || PRACTICE_DATA.key["base"];
+    activeList = Array.from({ length: 30 }, () => pool[Math.floor(Math.random() * pool.length)]);
+  } else if (currentMode === "word") {
     subMenuBar.style.display = "none";
-    songSelectBar.style.display = "flex";
-    songSelect.value = currentLongKey;
-    activeList = [...PRACTICE_DATA.long[currentLongKey]];
+    songSelectBar.style.display = "none";
+    const filteredWords = PRACTICE_DATA.word.filter(w => w.length >= 2 && w.length <= 4);
+    activeList = shuffle([...filteredWords]).slice(0, 40);
   } else if (currentMode === "short") {
     subMenuBar.style.display = "none";
     songSelectBar.style.display = "none";
     activeList = shuffle([...PRACTICE_DATA.short])
       .slice(0, 7)
       .map(sentence => sentence.endsWith('.') ? sentence : `${sentence}.`);
-  } else {
+  } else if (currentMode === "long") {
     subMenuBar.style.display = "none";
-    songSelectBar.style.display = "none";
-    activeList = shuffle([...PRACTICE_DATA[currentMode]]);
+    songSelectBar.style.display = "flex";
+    songSelect.value = currentLongKey;
+    activeList = [...PRACTICE_DATA.long[currentLongKey]];
   }
 
   currentIndex = 0;
@@ -838,8 +1081,23 @@ function initPractice() {
   clearAllActiveKeys();
   renderBoard();
   updateStats();
+  updateTargetKeyHighlight();
 
-  triggerCountdown();
+  // 4. 자리연습은 3초 카운트다운 없이 즉시 시작
+  if (currentMode === "key") {
+    if (countdownTimer) {
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+    }
+    countdownOverlay.classList.add("hidden");
+    isCountingDown = false;
+    typingInput.disabled = false;
+    ensureInputFocus();
+    startTimer();
+    updateTargetKeyHighlight();
+  } else {
+    triggerCountdown();
+  }
 }
 
 function shuffle(array) {
@@ -855,47 +1113,93 @@ function renderBoard() {
   const target = activeList[currentIndex] || "";
   const currentInput = typingInput.value;
 
-  targetDisplay.innerHTML = "";
-  for (let i = 0; i < target.length; i++) {
-    const span = document.createElement("span");
-    span.textContent = target[i];
-    span.className = i < currentInput.length ? "target-char-done" : "target-char-pending";
-    targetDisplay.appendChild(span);
-  }
-
-  userDisplay.innerHTML = "";
-  for (let i = 0; i < currentInput.length; i++) {
-    const span = document.createElement("span");
-    span.textContent = currentInput[i];
-
-    if (i < target.length && currentInput[i] === target[i]) {
-      span.className = "user-char-correct";
+  if (currentMode === "key" || currentMode === "word") {
+    // 1. 좌측 레일: 직전 완료 단어 표시
+    if (currentIndex > 0) {
+      hPrevItem.textContent = activeList[currentIndex - 1];
+      hPrevItem.style.visibility = "visible";
     } else {
-      span.className = "user-char-wrong";
+      hPrevItem.textContent = "";
+      hPrevItem.style.visibility = "hidden";
     }
-    userDisplay.appendChild(span);
-  }
 
-  const cursor = document.createElement("span");
-  cursor.className = "blinking-cursor";
-  cursor.textContent = "|";
-  userDisplay.appendChild(cursor);
+    // 2. 중앙 슬롯: 단어 및 입력 내용
+    hTargetDisplay.innerHTML = "";
+    for (let i = 0; i < target.length; i++) {
+      const span = document.createElement("span");
+      span.textContent = target[i];
+      span.className = i < currentInput.length ? "target-char-done" : "target-char-pending";
+      hTargetDisplay.appendChild(span);
+    }
 
-  if (currentIndex + 1 < activeList.length) {
-    nextDisplay.textContent = activeList[currentIndex + 1];
-    slotNext.style.display = "block";
+    hUserDisplay.innerHTML = "";
+    for (let i = 0; i < currentInput.length; i++) {
+      const span = document.createElement("span");
+      span.textContent = currentInput[i];
+      span.className = (i < target.length && currentInput[i] === target[i])
+        ? "user-char-correct"
+        : "user-char-wrong";
+      hUserDisplay.appendChild(span);
+    }
+
+    const cursor = document.createElement("span");
+    cursor.className = "blinking-cursor";
+    cursor.textContent = "|";
+    hUserDisplay.appendChild(cursor);
+
+    // 3. 우측 레일: 대기열 큐 렌더링
+    hQueueList.innerHTML = "";
+    const upcoming = activeList.slice(currentIndex + 1, currentIndex + 6);
+    upcoming.forEach((item) => {
+      const div = document.createElement("div");
+      div.className = "h-queue-item";
+      div.textContent = item;
+      hQueueList.appendChild(div);
+    });
+
   } else {
-    nextDisplay.textContent = "";
-    slotNext.style.display = "none";
+    // 4. 수직 3단 피드 뷰 렌더링
+    targetDisplay.innerHTML = "";
+    for (let i = 0; i < target.length; i++) {
+      const span = document.createElement("span");
+      span.textContent = target[i];
+      span.className = i < currentInput.length ? "target-char-done" : "target-char-pending";
+      targetDisplay.appendChild(span);
+    }
+
+    userDisplay.innerHTML = "";
+    for (let i = 0; i < currentInput.length; i++) {
+      const span = document.createElement("span");
+      span.textContent = currentInput[i];
+      span.className = (i < target.length && currentInput[i] === target[i])
+        ? "user-char-correct"
+        : "user-char-wrong";
+      userDisplay.appendChild(span);
+    }
+
+    const cursor = document.createElement("span");
+    cursor.className = "blinking-cursor";
+    cursor.textContent = "|";
+    userDisplay.appendChild(cursor);
+
+    if (currentIndex + 1 < activeList.length) {
+      nextDisplay.textContent = activeList[currentIndex + 1];
+      slotNext.style.display = "block";
+    } else {
+      nextDisplay.textContent = "";
+      slotNext.style.display = "none";
+    }
+
+    if (currentIndex + 2 < activeList.length) {
+      afterDisplay.textContent = activeList[currentIndex + 2];
+      slotAfter.style.display = "block";
+    } else {
+      afterDisplay.textContent = "";
+      slotAfter.style.display = "none";
+    }
   }
 
-  if (currentIndex + 2 < activeList.length) {
-    afterDisplay.textContent = activeList[currentIndex + 2];
-    slotAfter.style.display = "block";
-  } else {
-    afterDisplay.textContent = "";
-    slotAfter.style.display = "none";
-  }
+  updateTargetKeyHighlight();
 }
 
 function handleNext() {
@@ -903,7 +1207,11 @@ function handleNext() {
   isComposingLocked = true;
 
   const targetText = activeList[currentIndex] || "";
-  const currentInput = typingInput.value || "";
+  let currentInput = typingInput.value || "";
+
+  if (currentMode === "key") {
+    currentInput = targetText;
+  }
 
   currentSentenceStrokes = getValidStrokeCount(targetText, currentInput);
 
@@ -914,7 +1222,9 @@ function handleNext() {
 
     const effectiveDuration = Math.max(sentenceDuration, 0.4);
     lastFinishedCPM = Math.round((currentSentenceStrokes / effectiveDuration) * 60);
-    cpmDisplay.textContent = lastFinishedCPM;
+    if (currentMode !== "key") {
+      cpmDisplay.textContent = lastFinishedCPM;
+    }
   }
 
   const maxLen = Math.max(targetText.length, currentInput.length);
@@ -925,33 +1235,39 @@ function handleNext() {
     }
   }
 
-  const ghost = slotCurrent.cloneNode(true);
-  ghost.style.position = "absolute";
-  ghost.style.top = slotCurrent.offsetTop + "px";
-  ghost.style.left = slotCurrent.offsetLeft + "px";
-  ghost.style.width = slotCurrent.offsetWidth + "px";
-  ghost.style.pointerEvents = "none";
-  ghost.style.zIndex = "10";
-  practiceBoard.appendChild(ghost);
+  const isHorizontal = (currentMode === "key" || currentMode === "word");
 
-  ghost.animate([
-    { transform: "translateY(0px)", opacity: 1 },
-    { transform: "translateY(-32px)", opacity: 0 }
-  ], {
-    duration: 260,
-    easing: "cubic-bezier(0.25, 1, 0.5, 1)"
-  }).onfinish = () => {
-    if (ghost.parentNode) ghost.remove();
-  };
+  if (!isHorizontal) {
+    const ghost = slotCurrent.cloneNode(true);
+    ghost.style.position = "absolute";
+    ghost.style.top = slotCurrent.offsetTop + "px";
+    ghost.style.left = slotCurrent.offsetLeft + "px";
+    ghost.style.width = slotCurrent.offsetWidth + "px";
+    ghost.style.pointerEvents = "none";
+    ghost.style.zIndex = "10";
+    practiceBoard.appendChild(ghost);
 
-  const dist1 = slotNext.style.display !== "none" ? (slotNext.offsetTop - slotCurrent.offsetTop) : 48;
-  const dist2 = slotAfter.style.display !== "none" ? (slotAfter.offsetTop - slotNext.offsetTop) : 28;
+    ghost.animate([
+      { transform: "translateY(0px)", opacity: 1 },
+      { transform: "translateY(-32px)", opacity: 0 }
+    ], {
+      duration: 260,
+      easing: "cubic-bezier(0.25, 1, 0.5, 1)"
+    }).onfinish = () => {
+      if (ghost.parentNode) ghost.remove();
+    };
+  }
 
   currentIndex++;
   sentenceStartTime = null;
   currentSentenceStrokes = 0;
   typingInput.value = "";
-  userDisplay.innerHTML = '<span class="blinking-cursor">|</span>';
+
+  if (isHorizontal) {
+    hUserDisplay.innerHTML = '<span class="blinking-cursor">|</span>';
+  } else {
+    userDisplay.innerHTML = '<span class="blinking-cursor">|</span>';
+  }
 
   requestAnimationFrame(() => {
     typingInput.value = "";
@@ -969,42 +1285,69 @@ function handleNext() {
   renderBoard();
   updateStats();
 
-  slotCurrent.animate([
-    { transform: `translateY(${dist1}px) scale(0.8)`, transformOrigin: "left top", opacity: 0.7 },
-    { transform: "translateY(0px) scale(1)", transformOrigin: "left top", opacity: 1 }
-  ], {
-    duration: 260,
-    easing: "cubic-bezier(0.25, 1, 0.5, 1)"
-  });
+  if (isHorizontal) {
+    // 박스 틀은 고정하고 내부 글자(hTargetDisplay)와 양옆 레일만 우->좌 슬라이드
+    hTargetDisplay.classList.remove("h-slide-left");
+    void hTargetDisplay.offsetWidth;
+    hTargetDisplay.classList.add("h-slide-left");
 
-  if (slotNext.style.display !== "none") {
-    slotNext.animate([
-      { transform: `translateY(${dist2}px) scale(0.8)`, transformOrigin: "left top", opacity: 0.4 },
-      { transform: "translateY(0px) scale(1)", transformOrigin: "left top", opacity: 0.7 }
+    hPrevItem.classList.remove("h-slide-left");
+    void hPrevItem.offsetWidth;
+    hPrevItem.classList.add("h-slide-left");
+
+    hQueueList.classList.remove("h-slide-left");
+    void hQueueList.offsetWidth;
+    hQueueList.classList.add("h-slide-left");
+  } else {
+    // 수직 피드 3단 상승 애니메이션
+    const dist1 = slotNext.style.display !== "none" ? (slotNext.offsetTop - slotCurrent.offsetTop) : 48;
+    const dist2 = slotAfter.style.display !== "none" ? (slotAfter.offsetTop - slotNext.offsetTop) : 28;
+
+    slotCurrent.animate([
+      { transform: `translateY(${dist1}px) scale(0.8)`, transformOrigin: "left top", opacity: 0.7 },
+      { transform: "translateY(0px) scale(1)", transformOrigin: "left top", opacity: 1 }
     ], {
       duration: 260,
       easing: "cubic-bezier(0.25, 1, 0.5, 1)"
     });
-  }
 
-  if (slotAfter.style.display !== "none") {
-    slotAfter.animate([
-      { transform: "translateY(20px)", opacity: 0 },
-      { transform: "translateY(0px)", opacity: 0.4 }
-    ], {
-      duration: 260,
-      easing: "cubic-bezier(0.25, 1, 0.5, 1)"
-    });
+    if (slotNext.style.display !== "none") {
+      slotNext.animate([
+        { transform: `translateY(${dist2}px) scale(0.8)`, transformOrigin: "left top", opacity: 0.4 },
+        { transform: "translateY(0px) scale(1)", transformOrigin: "left top", opacity: 0.7 }
+      ], {
+        duration: 260,
+        easing: "cubic-bezier(0.25, 1, 0.5, 1)"
+      });
+    }
+
+    if (slotAfter.style.display !== "none") {
+      slotAfter.animate([
+        { transform: "translateY(20px)", opacity: 0 },
+        { transform: "translateY(0px)", opacity: 0.4 }
+      ], {
+        duration: 260,
+        easing: "cubic-bezier(0.25, 1, 0.5, 1)"
+      });
+    }
   }
 }
 
 function finishPractice() {
   stopTimer();
   typingInput.disabled = true;
-  targetDisplay.textContent = "연습 완료!";
-  userDisplay.innerHTML = "";
-  nextDisplay.textContent = "";
-  afterDisplay.textContent = "";
+
+  if (currentMode === "key" || currentMode === "word") {
+    hTargetDisplay.textContent = "연습 완료!";
+    hUserDisplay.innerHTML = "";
+    hQueueList.innerHTML = "";
+    hPrevItem.textContent = "";
+  } else {
+    targetDisplay.textContent = "연습 완료!";
+    userDisplay.innerHTML = "";
+    nextDisplay.textContent = "";
+    afterDisplay.textContent = "";
+  }
 
   const acc = pastAttemptedChars > 0 ? Math.round((pastCorrectChars / pastAttemptedChars) * 100) : 100;
   const totalDuration = Math.max(totalCompletedTime, 1);
@@ -1015,6 +1358,7 @@ function finishPractice() {
   finalTime.textContent = formatTime(elapsedSeconds);
   resultModal.classList.remove("hidden");
   clearAllActiveKeys();
+  updateTargetKeyHighlight();
 }
 
 function triggerInputError() {
@@ -1024,7 +1368,7 @@ function triggerInputError() {
 }
 
 /* =====================================================================
-   9. 자동 포커스 유지 & 입력 제어
+   10. 자동 포커스 유지 & 입력 제어
    ===================================================================== */
 function ensureInputFocus() {
   if (!typingInput.disabled && !isCountingDown && resultModal.classList.contains("hidden") && !typingContainer.classList.contains("hidden")) {
@@ -1047,8 +1391,13 @@ window.addEventListener("keydown", (e) => {
 typingInput.addEventListener("compositionend", () => {
   if (isComposingLocked) {
     typingInput.value = "";
-    userDisplay.innerHTML = '<span class="blinking-cursor">|</span>';
+    if (currentMode === "key" || currentMode === "word") {
+      hUserDisplay.innerHTML = '<span class="blinking-cursor">|</span>';
+    } else {
+      userDisplay.innerHTML = '<span class="blinking-cursor">|</span>';
+    }
   }
+  updateTargetKeyHighlight();
 });
 
 typingInput.addEventListener("input", () => {
@@ -1075,10 +1424,23 @@ typingInput.addEventListener("input", () => {
 
   currentSentenceStrokes = getValidStrokeCount(targetText, currentInput);
 
+  // 자리연습 판정: 오타 시 진행 차단
   if (currentMode === "key") {
     if (currentInput.length >= 1) {
-      handleNext();
-      return;
+      const inputChar = currentInput[currentInput.length - 1];
+
+      if (inputChar === targetText) {
+        handleNext();
+        return;
+      } else {
+        pastAttemptedChars++;
+        triggerInputError();
+        typingInput.value = "";
+        hUserDisplay.innerHTML = `<span class="user-char-wrong">${inputChar}</span><span class="blinking-cursor">|</span>`;
+        updateStats();
+        updateTargetKeyHighlight();
+        return;
+      }
     }
   }
 
@@ -1089,6 +1451,7 @@ typingInput.addEventListener("input", () => {
 
   renderBoard();
   updateStats();
+  updateTargetKeyHighlight();
 });
 
 typingInput.addEventListener("keydown", (e) => {
@@ -1101,7 +1464,9 @@ typingInput.addEventListener("keydown", (e) => {
     return;
   }
 
-  if (e.key === "Enter" || e.keyCode === 13) {
+  const isSubmitKey = (e.key === "Enter" || e.keyCode === 13) || (e.key === " " && currentMode === "word");
+
+  if (isSubmitKey) {
     e.preventDefault();
 
     if (isSubmittingSentence || isCountingDown) return;
@@ -1122,7 +1487,7 @@ typingInput.addEventListener("keydown", (e) => {
 });
 
 /* =====================================================================
-   10. 가상 키보드 제어 및 상태 동기화 (localStorage 연동)
+   11. 가상 키보드 제어 및 상태 동기화 (localStorage 연동)
    ===================================================================== */
 function clearAllActiveKeys() {
   document.querySelectorAll(".key.key-active").forEach((el) => {
@@ -1135,11 +1500,13 @@ function updateKeyboardVisibilityUI() {
     keyboardWrapper.classList.remove("collapsed");
     toggleKeyboardBtn.textContent = "⌨️ 키보드 숨기기";
     toggleKeyboardBtn.classList.remove("off");
+    updateTargetKeyHighlight();
   } else {
     keyboardWrapper.classList.add("collapsed");
     toggleKeyboardBtn.textContent = "⌨️ 키보드 켜기";
     toggleKeyboardBtn.classList.add("off");
     clearAllActiveKeys();
+    document.querySelectorAll(".key.key-target").forEach((el) => el.classList.remove("key-target"));
   }
 }
 
@@ -1168,9 +1535,11 @@ toggleKeyboardBtn.addEventListener("click", () => {
 });
 
 /* =====================================================================
-   11. 실시간 타수 계산 (50ms 주기)
+   12. 실시간 타수 계산 (50ms 주기, 자리연습 모드는 계산 배제)
    ===================================================================== */
 setInterval(() => {
+  if (currentMode === "key") return;
+
   if (!sentenceStartTime) {
     if (currentIndex > 0) {
       cpmDisplay.textContent = lastFinishedCPM;
@@ -1190,7 +1559,7 @@ setInterval(() => {
 }, 50);
 
 /* =====================================================================
-   12. 메뉴 전환 및 하단 전체(#practice-body) 좌우 스와이프 트랜지션
+   13. 메뉴 전환 및 하단 전체(#practice-body) 좌우 스와이프 트랜지션
    ===================================================================== */
 function switchModeWithSlide(newMode) {
   if (isModeSwitching || newMode === currentMode) return;
@@ -1259,7 +1628,7 @@ songSelect.addEventListener("change", (e) => {
 restartBtn.addEventListener("click", initPractice);
 
 /* =====================================================================
-   13. 로딩 화면 해제 및 키보드 저장 상태 초기화
+   14. 로딩 화면 해제 및 초기화
    ===================================================================== */
 window.addEventListener("DOMContentLoaded", () => {
   updateKeyboardVisibilityUI();
