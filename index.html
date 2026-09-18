@@ -61,7 +61,7 @@
 
   <!-- 메인 타자연습 컨테이너 (모드 선택 시 활성화) -->
   <div id="typing-container" class="typing-container hidden">
-    <!-- 상단 고정 헤더 (슬라이드 제외 구역) -->
+    <!-- 상단 고정 헤더 -->
     <header>
       <div class="header-left">
         <h1 class="logo clickable" id="home-logo" title="메인 메뉴로 돌아가기">재미있는 타자연습</h1>
@@ -83,7 +83,7 @@
       </div>
     </header>
 
-    <!-- 슬라이드 애니메이션 대상 하단 통합 래퍼 -->
+    <!-- 좌우 슬라이드 전환 대상 하단 래퍼 -->
     <div id="practice-body" class="practice-body">
       <!-- 자리연습 세부 메뉴 -->
       <div id="sub-menu-bar" class="sub-menu-bar">
@@ -112,7 +112,7 @@
       </div>
 
       <!-- 대시보드 (오도미터 듀얼 롤링 넘버) -->
-      <section class="dashboard">
+      <section class="dashboard" id="dashboard">
         <div class="stat-card">
           <span class="stat-label">진행 시간</span>
           <div class="stat-value-group">
@@ -125,13 +125,16 @@
             </div>
           </div>
         </div>
-        <div class="stat-card">
+
+        <!-- 현재 타수 카드 (자리연습 시 숨김 처리 대상) -->
+        <div class="stat-card" id="cpm-card">
           <span class="stat-label">현재 타수</span>
           <div class="stat-value-group">
             <span id="cpm-display" class="stat-value highlight">0</span>
             <span class="stat-unit">타/분</span>
           </div>
         </div>
+
         <div class="stat-card">
           <span class="stat-label">정확도</span>
           <div class="stat-value-group">
@@ -151,31 +154,59 @@
         </div>
       </section>
 
-      <!-- 타자 연습 영역 (상하 3단 컨베이어 피드 + 3초 카운트다운) -->
+      <!-- 타자 연습 영역 -->
       <main class="practice-area">
         <div id="practice-board" class="practice-board">
+          <!-- 3초 카운트다운 오버레이 -->
           <div id="countdown-overlay" class="countdown-overlay hidden">
             <div id="countdown-number" class="countdown-number">3</div>
             <p id="countdown-sub" class="countdown-sub">잠시 후 연습이 시작됩니다</p>
           </div>
 
-          <div class="sentence-slot slot-current" id="slot-current">
-            <div class="text-line target-line">
-              <div id="target-display" class="line-content"></div>
+          <!-- 1. 수평 컨베이어 뷰 (자리연습 / 낱말연습 전용 - 중앙 고정 배치) -->
+          <div id="horizontal-view" class="horizontal-view">
+            <div class="h-stage">
+              <!-- 좌측: 직전 완료된 글자/단어 레일 -->
+              <div class="h-rail h-rail-left">
+                <div id="h-prev-item" class="h-queue-item h-prev-item"></div>
+              </div>
+
+              <!-- 중앙: 현재 입력해야 할 대상 박스 (프레임 고정) -->
+              <div class="h-slot-current" id="h-slot-current">
+                <div class="h-target-wrap">
+                  <span id="h-target-display" class="h-target-text"></span>
+                </div>
+                <div class="h-input-wrap">
+                  <span id="h-user-display" class="h-user-text"></span>
+                </div>
+              </div>
+
+              <!-- 우측: 대기 중인 다음 글자/단어 큐 레일 -->
+              <div class="h-rail h-rail-right">
+                <div id="h-queue-list" class="h-queue-list"></div>
+              </div>
             </div>
-            <div class="text-line input-line">
-              <div id="user-display" class="line-content"></div>
+          </div>
+
+          <!-- 2. 수직 3단 피드 뷰 (단문연습 / 장문연습 전용) -->
+          <div id="vertical-view" class="vertical-view hidden">
+            <div class="sentence-slot slot-current" id="slot-current">
+              <div class="text-line target-line">
+                <div id="target-display" class="line-content"></div>
+              </div>
+              <div class="text-line input-line">
+                <div id="user-display" class="line-content"></div>
+              </div>
+            </div>
+            <div class="sentence-slot slot-next" id="slot-next">
+              <div id="next-display" class="preview-text"></div>
+            </div>
+            <div class="sentence-slot slot-after" id="slot-after">
+              <div id="after-display" class="preview-text"></div>
             </div>
           </div>
 
-          <div class="sentence-slot slot-next" id="slot-next">
-            <div id="next-display" class="preview-text"></div>
-          </div>
-
-          <div class="sentence-slot slot-after" id="slot-after">
-            <div id="after-display" class="preview-text"></div>
-          </div>
-
+          <!-- 키 입력 수신용 히든 인풋 필드 -->
           <input type="text" id="typing-input" class="hidden-input" autocomplete="off" spellcheck="false">
         </div>
       </main>
