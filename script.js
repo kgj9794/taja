@@ -65,6 +65,24 @@ function decomposeChar(char) {
   return [{ type: 'other', char: char, stroke: getCharStrokes(char) }];
 }
 
+/* 입력 중인 음소가 목표 음절의 올바른 입력 조합 단계인지 검증 */
+function isCharPrefix(targetChar, inputChar) {
+  if (!targetChar || !inputChar) return false;
+  if (targetChar === inputChar) return true;
+
+  const tParts = decomposeChar(targetChar);
+  const iParts = decomposeChar(inputChar);
+
+  if (iParts.length === 0 || iParts.length > tParts.length) return false;
+
+  for (let j = 0; j < iParts.length; j++) {
+    if (tParts[j].type !== iParts[j].type || tParts[j].idx !== iParts[j].idx) {
+      return false;
+    }
+  }
+  return true;
+}
+
 function getValidStrokeCount(targetText, input) {
   if (!targetText || !input) return 0;
   let validStrokes = 0;
@@ -525,6 +543,9 @@ let currentSubPos = "base";
 let currentLongKey = "stars";
 let activeList = [];
 let currentIndex = 0;
+
+let hasKeyError = false; // 자리연습 오타 발생 여부 플래그
+let lastResult = null;   // 직전 제출된 결과 { target, input } 보관 (좌측 레일 렌더링용)
 
 let sentenceStartTime = null;
 let currentSentenceStrokes = 0;
@@ -1014,12 +1035,14 @@ function animateAppClose() {
 
 function initPractice() {
   resetTimer();
+  hasKeyError = false;
+  lastResult = null;
 
   // 1. 모드별 뷰 토글
   if (currentMode === "key" || currentMode === "word") {
     horizontalView.classList.remove("hidden");
     verticalView.classList.add("hidden");
-    hPrevItem.textContent = "";
+    hPrevItem.innerHTML = "";
     hPrevItem.style.visibility = "hidden";
   } else {
     horizontalView.classList.add("hidden");
@@ -1112,33 +1135,112 @@ function renderBoard() {
 
   const target = activeList[currentIndex] || "";
   const currentInput = typingInput.value;
+  const inputLen = currentInput.length;
 
-  if (currentMode === "key" || currentMode === "word") {
-    // 1. 좌측 레일: 직전 완료 단어 표시
-    if (currentIndex > 0) {
-      hPrevItem.textContent = activeList[currentIndex - 1];
+  if (currentMode === "key") {
+    // 1. 좌측 레일: 직전 통과한 글자 표시 (자리연습은 정답을 쳐야만 통과하므로 항상 정상)
+    if (currentIndex > 0 && lastResult) {
+      hPrevItem.innerHTML = `<span>${lastResult.target}</span>`;
       hPrevItem.style.visibility = "visible";
     } else {
-      hPrevItem.textContent = "";
+      hPrevItem.innerHTML = "";
       hPrevItem.style.visibility = "hidden";
     }
 
-    // 2. 중앙 슬롯: 단어 및 입력 내용
+    // [자리연습]: 오타 시 입력할 글자 자체만 빨간색으로 변경
+    hTargetDisplay.innerHTML = "";
+    const span = document.createElement("span");
+    span.textContent = target;
+    span.className = hasKeyError ? "target-char-error" : "target-char-pending";
+    hTargetDisplay.appendChild(span);
+
+    // [자리연습]: 오타는 입력창에 남기지 않고 커서만 표시
+    hUserDisplay.innerHTML = '<span class="blinking-cursor">|</span>';
+
+    // 우측 큐 레일
+    hQueueList.innerHTML = "";
+    const upcoming = activeList.slice(currentIndex + 1, currentIndex + 6);
+    upcoming.forEach((item) => {
+      const div = document.createElement("div");
+      div.className = "h-queue-item";
+      div.textContent = item;
+      hQueueList.appendChild(div);
+    });
+
+  } else if (currentMode === "word") {
+    // 1. 좌측 레일: 직전 단어 중 실제로 틀리게 제출된 '그 글자만' 콕 집어 빨간색 표기
+    if (currentIndex > 0 && lastResult) {
+      const prevTarget = lastResult.target;
+      const prevInput = lastResult.input;
+      const maxLen = Math.max(prevTarget.length, prevInput.length);
+      let prevHtml = "";
+
+      for (let i = 0; i < maxLen; i++) {
+        const tChar = prevTarget[i] || "";
+        const iChar = prevInput[i] || "";
+
+        if (tChar === iChar) {
+          prevHtml += `<span>${tChar}</span>`;
+        } else {
+          // 오타 글자만 빨간색 밑줄 처리
+          const errChar = iChar || tChar;
+          prevHtml += `<span class="prev-char-wrong">${errChar}</span>`;
+        }
+      }
+      hPrevItem.innerHTML = prevHtml;
+      hPrevItem.style.visibility = "visible";
+    } else {
+      hPrevItem.innerHTML = "";
+      hPrevItem.style.visibility = "hidden";
+    }
+
+    // [낱말연습]: 목표 단어 렌더링
     hTargetDisplay.innerHTML = "";
     for (let i = 0; i < target.length; i++) {
       const span = document.createElement("span");
       span.textContent = target[i];
-      span.className = i < currentInput.length ? "target-char-done" : "target-char-pending";
+
+      if (i < inputLen - 1) {
+        // 이미 입력이 끝난 이전 글자가 완전히 다르면 빨간색
+        span.className = (currentInput[i] === target[i]) ? "target-char-done" : "target-char-error";
+      } else if (i === inputLen - 1) {
+        // 현재 입력 진행 중인 글자
+        if (currentInput[i] === target[i]) {
+          span.className = "target-char-done";
+        } else if (isCharPrefix(target[i], currentInput[i])) {
+          // 올바른 자모 조합 중에는 절대 빨간색으로 띄우지 않음
+          span.className = "target-char-pending";
+        } else {
+          // 아예 다른 엉뚱한 키를 쳤을 때만 빨간색
+          span.className = "target-char-error";
+        }
+      } else {
+        span.className = "target-char-pending";
+      }
       hTargetDisplay.appendChild(span);
     }
 
+    // [낱말연습]: 사용자 입력 텍스트 렌더링
     hUserDisplay.innerHTML = "";
-    for (let i = 0; i < currentInput.length; i++) {
+    for (let i = 0; i < inputLen; i++) {
       const span = document.createElement("span");
       span.textContent = currentInput[i];
-      span.className = (i < target.length && currentInput[i] === target[i])
-        ? "user-char-correct"
-        : "user-char-wrong";
+
+      if (i < inputLen - 1) {
+        // 이미 넘어간 글자: 틀리면 빨간색
+        span.className = (i < target.length && currentInput[i] === target[i]) ? "user-char-correct" : "user-char-wrong";
+      } else {
+        // 현재 입력 중인 글자
+        if (i < target.length && currentInput[i] === target[i]) {
+          span.className = "user-char-correct";
+        } else if (i < target.length && isCharPrefix(target[i], currentInput[i])) {
+          // 올바르게 타이핑 중인 글자(검정/기본)
+          span.className = "user-char-typing";
+        } else {
+          // 아예 다르게 입력한 글자만 빨간색
+          span.className = "user-char-wrong";
+        }
+      }
       hUserDisplay.appendChild(span);
     }
 
@@ -1147,7 +1249,7 @@ function renderBoard() {
     cursor.textContent = "|";
     hUserDisplay.appendChild(cursor);
 
-    // 3. 우측 레일: 대기열 큐 렌더링
+    // 우측 큐 레일
     hQueueList.innerHTML = "";
     const upcoming = activeList.slice(currentIndex + 1, currentIndex + 6);
     upcoming.forEach((item) => {
@@ -1158,22 +1260,42 @@ function renderBoard() {
     });
 
   } else {
-    // 4. 수직 3단 피드 뷰 렌더링
+    // 3. 단문/장문 수직 피드 뷰 렌더링
     targetDisplay.innerHTML = "";
     for (let i = 0; i < target.length; i++) {
       const span = document.createElement("span");
       span.textContent = target[i];
-      span.className = i < currentInput.length ? "target-char-done" : "target-char-pending";
+
+      if (i < inputLen - 1) {
+        span.className = (currentInput[i] === target[i]) ? "target-char-done" : "target-char-error";
+      } else if (i === inputLen - 1) {
+        if (currentInput[i] === target[i] || isCharPrefix(target[i], currentInput[i])) {
+          span.className = (currentInput[i] === target[i]) ? "target-char-done" : "target-char-pending";
+        } else {
+          span.className = "target-char-error";
+        }
+      } else {
+        span.className = "target-char-pending";
+      }
       targetDisplay.appendChild(span);
     }
 
     userDisplay.innerHTML = "";
-    for (let i = 0; i < currentInput.length; i++) {
+    for (let i = 0; i < inputLen; i++) {
       const span = document.createElement("span");
       span.textContent = currentInput[i];
-      span.className = (i < target.length && currentInput[i] === target[i])
-        ? "user-char-correct"
-        : "user-char-wrong";
+
+      if (i < inputLen - 1) {
+        span.className = (i < target.length && currentInput[i] === target[i]) ? "user-char-correct" : "user-char-wrong";
+      } else {
+        if (i < target.length && currentInput[i] === target[i]) {
+          span.className = "user-char-correct";
+        } else if (i < target.length && isCharPrefix(target[i], currentInput[i])) {
+          span.className = "user-char-typing";
+        } else {
+          span.className = "user-char-wrong";
+        }
+      }
       userDisplay.appendChild(span);
     }
 
@@ -1205,6 +1327,7 @@ function renderBoard() {
 function handleNext() {
   isSubmittingSentence = true;
   isComposingLocked = true;
+  hasKeyError = false;
 
   const targetText = activeList[currentIndex] || "";
   let currentInput = typingInput.value || "";
@@ -1212,6 +1335,12 @@ function handleNext() {
   if (currentMode === "key") {
     currentInput = targetText;
   }
+
+  // 직전 단어의 최종 입력 결과 저장 (중간에 지우고 고쳤더라도 최종 단어가 맞으면 정상 처리)
+  lastResult = {
+    target: targetText,
+    input: currentInput
+  };
 
   currentSentenceStrokes = getValidStrokeCount(targetText, currentInput);
 
@@ -1286,7 +1415,6 @@ function handleNext() {
   updateStats();
 
   if (isHorizontal) {
-    // 박스 틀은 고정하고 내부 글자(hTargetDisplay)와 양옆 레일만 우->좌 슬라이드
     hTargetDisplay.classList.remove("h-slide-left");
     void hTargetDisplay.offsetWidth;
     hTargetDisplay.classList.add("h-slide-left");
@@ -1299,7 +1427,6 @@ function handleNext() {
     void hQueueList.offsetWidth;
     hQueueList.classList.add("h-slide-left");
   } else {
-    // 수직 피드 3단 상승 애니메이션
     const dist1 = slotNext.style.display !== "none" ? (slotNext.offsetTop - slotCurrent.offsetTop) : 48;
     const dist2 = slotAfter.style.display !== "none" ? (slotAfter.offsetTop - slotNext.offsetTop) : 28;
 
@@ -1341,7 +1468,7 @@ function finishPractice() {
     hTargetDisplay.textContent = "연습 완료!";
     hUserDisplay.innerHTML = "";
     hQueueList.innerHTML = "";
-    hPrevItem.textContent = "";
+    hPrevItem.innerHTML = "";
   } else {
     targetDisplay.textContent = "연습 완료!";
     userDisplay.innerHTML = "";
@@ -1424,19 +1551,21 @@ typingInput.addEventListener("input", () => {
 
   currentSentenceStrokes = getValidStrokeCount(targetText, currentInput);
 
-  // 자리연습 판정: 오타 시 진행 차단
+  // [자리연습 판정]: 오타 시 입력값 미반영(비움) + 목표 글자 빨간색 강조
   if (currentMode === "key") {
     if (currentInput.length >= 1) {
       const inputChar = currentInput[currentInput.length - 1];
 
       if (inputChar === targetText) {
+        hasKeyError = false;
         handleNext();
         return;
       } else {
         pastAttemptedChars++;
         triggerInputError();
         typingInput.value = "";
-        hUserDisplay.innerHTML = `<span class="user-char-wrong">${inputChar}</span><span class="blinking-cursor">|</span>`;
+        hasKeyError = true;
+        renderBoard();
         updateStats();
         updateTargetKeyHighlight();
         return;
@@ -1487,7 +1616,7 @@ typingInput.addEventListener("keydown", (e) => {
 });
 
 /* =====================================================================
-   11. 가상 키보드 제어 및 상태 동기화 (localStorage 연동)
+   11. 가상 키보드 제어 및 상태 동기화
    ===================================================================== */
 function clearAllActiveKeys() {
   document.querySelectorAll(".key.key-active").forEach((el) => {
@@ -1498,13 +1627,15 @@ function clearAllActiveKeys() {
 function updateKeyboardVisibilityUI() {
   if (isKeyboardVisible) {
     keyboardWrapper.classList.remove("collapsed");
-    toggleKeyboardBtn.textContent = "⌨️ 키보드 숨기기";
     toggleKeyboardBtn.classList.remove("off");
+    toggleKeyboardBtn.setAttribute("title", "키보드 숨기기");
+    toggleKeyboardBtn.setAttribute("aria-label", "키보드 숨기기");
     updateTargetKeyHighlight();
   } else {
     keyboardWrapper.classList.add("collapsed");
-    toggleKeyboardBtn.textContent = "⌨️ 키보드 켜기";
     toggleKeyboardBtn.classList.add("off");
+    toggleKeyboardBtn.setAttribute("title", "키보드 켜기");
+    toggleKeyboardBtn.setAttribute("aria-label", "키보드 켜기");
     clearAllActiveKeys();
     document.querySelectorAll(".key.key-target").forEach((el) => el.classList.remove("key-target"));
   }
