@@ -311,16 +311,11 @@ header {
   border-color: #94a3b8;
 }
 
-.header-action-btn.off {
-  background: #fef2f2;
-  border-color: #fecaca;
-  color: #ef4444;
-}
-
 .header-action-btn.icon-btn {
   width: 35px;
   padding: 0;
   flex-shrink: 0;
+  position: relative;
 }
 
 .header-action-btn.icon-btn svg {
@@ -331,6 +326,25 @@ header {
 .header-action-btn.icon-btn:hover svg {
   stroke: #2563eb;
   transform: scale(1.06);
+}
+
+.kb-slash {
+  display: none;
+  stroke: #ef4444;
+  stroke-width: 2.2;
+}
+
+.header-action-btn.off {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.header-action-btn.off .kb-icon {
+  stroke: #ef4444;
+}
+
+.header-action-btn.off .kb-slash {
+  display: block;
 }
 
 /* =====================================================================
@@ -445,7 +459,7 @@ header {
 }
 
 /* =====================================================================
-   대시보드 & 타수 카드 숨김 동적 2열 레이아웃
+   대시보드 & 타수 카드 숨김 2열 레이아웃
    ===================================================================== */
 .dashboard {
   display: grid;
@@ -454,7 +468,6 @@ header {
   transition: grid-template-columns 0.2s ease;
 }
 
-/* 자리연습 모드 전용: 현재 타수 카드를 숨기고 진행 시간과 정확도를 1:1로 확장 */
 .dashboard.hide-cpm {
   grid-template-columns: repeat(2, 1fr);
 }
@@ -674,7 +687,7 @@ header {
 }
 
 /* =====================================================================
-   1. 수평 컨베이어 뷰 (박스 프레임 고정 + 글자만 우->좌 슬라이드)
+   1. 수평 컨베이어 뷰
    ===================================================================== */
 .horizontal-view {
   width: 100%;
@@ -716,7 +729,6 @@ header {
   -webkit-mask-image: linear-gradient(to right, black 50%, transparent 100%);
 }
 
-/* 정중앙 입력 포커스 카드 (완전 고정) */
 .h-slot-current {
   width: 210px;
   min-height: 112px;
@@ -741,7 +753,6 @@ header {
   position: relative;
 }
 
-/* 박스 내부 단어만 우측에서 스르륵 들어오는 애니메이션 */
 .h-target-text {
   font-size: 2.1rem;
   font-weight: 800;
@@ -777,7 +788,6 @@ header {
   display: inline-block;
 }
 
-/* 대기열 큐 레일 우->좌 슬라이드 */
 .h-queue-list {
   display: flex;
   align-items: center;
@@ -813,11 +823,24 @@ header {
   will-change: transform, opacity;
 }
 
-/* 좌측 이전 단어로 밀려나는 애니메이션 */
+/* 좌측 이전 단어 박스 (외곽선/배경은 단정한 회색 박스 유지) */
 .h-prev-item {
-  opacity: 0.35;
-  filter: grayscale(1);
+  opacity: 0.65;
   border-style: dashed;
+  transition: all 0.2s ease;
+}
+
+.h-prev-item span {
+  display: inline-block;
+  color: #64748b;
+}
+
+/* 좌측 단어 중 틀린 글자만 콕 집어 빨간색 밑줄 표기 */
+.h-prev-item span.prev-char-wrong {
+  color: #ef4444 !important;
+  font-weight: 800;
+  text-decoration: underline;
+  text-decoration-color: #ef4444;
 }
 
 .h-prev-item.h-slide-left {
@@ -826,7 +849,7 @@ header {
 
 @keyframes hSlidePrevFromCenter {
   0% { transform: translateX(95px); opacity: 0.75; }
-  100% { transform: translateX(0); opacity: 0.35; }
+  100% { transform: translateX(0); }
 }
 
 .h-prev-item:empty {
@@ -834,7 +857,7 @@ header {
 }
 
 /* =====================================================================
-   2. 수직 3단 피드 뷰 (단문연습 / 장문연습)
+   2. 수직 3단 피드 뷰 & 글자 상태별 색상
    ===================================================================== */
 .vertical-view {
   width: 100%;
@@ -880,6 +903,7 @@ header {
   user-select: none;
 }
 
+/* 목표 단어/글자 상태 */
 .target-char-done {
   color: #0f172a;
 }
@@ -888,15 +912,32 @@ header {
   color: #94a3b8;
 }
 
+/* 완전히 잘못 입력된 목표 글자 빨간색 강조 */
+.target-char-error {
+  color: #ef4444 !important;
+  background-color: #fee2e2;
+  border-radius: 4px;
+  padding: 0 1px;
+  text-decoration: underline;
+  text-decoration-color: #ef4444;
+}
+
 .input-line {
   border-top: 1px solid #f1f5f9;
   padding-top: 10px;
 }
 
+/* 사용자 입력 텍스트 상태 */
 .user-char-correct {
   color: #2563eb;
 }
 
+/* 입력 진행 중인 정상 음소 (빨간색 띄우지 않음) */
+.user-char-typing {
+  color: #0f172a;
+}
+
+/* 완전히 잘못 입력된 사용자 글자 빨간색 강조 */
 .user-char-wrong {
   color: #ef4444;
   background-color: #fee2e2;
@@ -969,7 +1010,7 @@ header {
 }
 
 /* =====================================================================
-   가상 키보드 & 다음 입력 타깃 은은한 레드 하이라이트
+   가상 키보드 & 은은한 레드 하이라이트
    ===================================================================== */
 .keyboard-wrapper {
   background: #f8fafc;
