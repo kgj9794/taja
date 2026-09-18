@@ -61,7 +61,7 @@
 
   <!-- 메인 타자연습 컨테이너 (모드 선택 시 활성화) -->
   <div id="typing-container" class="typing-container hidden">
-    <!-- 상단 헤더 및 모드 선택 네비게이션 -->
+    <!-- 상단 고정 헤더 (슬라이드 제외 구역) -->
     <header>
       <div class="header-left">
         <h1 class="logo clickable" id="home-logo" title="메인 메뉴로 돌아가기">재미있는 타자연습</h1>
@@ -73,179 +73,183 @@
         </nav>
       </div>
       <div class="header-right">
-        <button id="lobby-back-btn" class="header-action-btn">🏠 메뉴로</button>
+        <button id="lobby-back-btn" class="header-action-btn icon-btn" title="홈으로" aria-label="메인 메뉴로 돌아가기">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9.5L12 3l9 6.5V20a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9.5z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+        </button>
         <button id="toggle-keyboard-btn" class="header-action-btn">⌨️ 키보드 숨기기</button>
       </div>
     </header>
 
-    <!-- 자리연습 세부 메뉴 -->
-    <div id="sub-menu-bar" class="sub-menu-bar">
-      <button class="sub-btn active" data-pos="base">기본자리</button>
-      <button class="sub-btn" data-pos="left-top">왼손윗자리</button>
-      <button class="sub-btn" data-pos="left-bottom">왼손아랫자리</button>
-      <button class="sub-btn" data-pos="center">가운데자리</button>
-      <button class="sub-btn" data-pos="right-top">오른손윗자리</button>
-      <button class="sub-btn" data-pos="right-bottom">오른손아랫자리</button>
-      <button class="sub-btn" data-pos="all">전체자리</button>
-      <button class="sub-btn" data-pos="number">숫자자리</button>
-    </div>
-
-    <!-- 장문연습 전문 완독 선택 메뉴 -->
-    <div id="song-select-bar" class="sub-menu-bar song-select-bar" style="display: none;">
-      <label for="song-select" class="song-select-label">📜 장문 완독 선택:</label>
-      <div class="select-wrapper">
-        <select id="song-select" class="song-select">
-          <option value="stars">윤동주 - 별 헤는 밤 (전문 완독본)</option>
-          <option value="silence">한용운 - 님의 침묵 (전문 완독본)</option>
-          <option value="azalea">김소월 - 진달래꽃 (전문 완독본)</option>
-          <option value="nostalgia">정지용 - 향수 (전문 완독본)</option>
-          <option value="wings">이상 - 날개 (도입부 전문 완독본)</option>
-        </select>
+    <!-- 슬라이드 애니메이션 대상 하단 통합 래퍼 -->
+    <div id="practice-body" class="practice-body">
+      <!-- 자리연습 세부 메뉴 -->
+      <div id="sub-menu-bar" class="sub-menu-bar">
+        <button class="sub-btn active" data-pos="base">기본자리</button>
+        <button class="sub-btn" data-pos="left-top">왼손윗자리</button>
+        <button class="sub-btn" data-pos="left-bottom">왼손아랫자리</button>
+        <button class="sub-btn" data-pos="center">가운데자리</button>
+        <button class="sub-btn" data-pos="right-top">오른손윗자리</button>
+        <button class="sub-btn" data-pos="right-bottom">오른손아랫자리</button>
+        <button class="sub-btn" data-pos="all">전체자리</button>
+        <button class="sub-btn" data-pos="number">숫자자리</button>
       </div>
-    </div>
 
-    <!-- 대시보드 (오도미터 듀얼 롤링 넘버) -->
-    <section class="dashboard">
-      <div class="stat-card">
-        <span class="stat-label">진행 시간</span>
-        <div class="stat-value-group">
-          <div class="stat-value time-group">
-            <div class="digit-box" id="slot-m1"><span class="digit-val">0</span></div>
-            <div class="digit-box" id="slot-m2"><span class="digit-val">0</span></div>
-            <span class="time-colon">:</span>
-            <div class="digit-box" id="slot-s1"><span class="digit-val">0</span></div>
-            <div class="digit-box" id="slot-s2"><span class="digit-val">0</span></div>
+      <!-- 장문연습 전문 완독 선택 메뉴 -->
+      <div id="song-select-bar" class="sub-menu-bar song-select-bar" style="display: none;">
+        <label for="song-select" class="song-select-label">📜 장문 완독 선택:</label>
+        <div class="select-wrapper">
+          <select id="song-select" class="song-select">
+            <option value="stars">윤동주 - 별 헤는 밤 (전문 완독본)</option>
+            <option value="silence">한용운 - 님의 침묵 (전문 완독본)</option>
+            <option value="azalea">김소월 - 진달래꽃 (전문 완독본)</option>
+            <option value="nostalgia">정지용 - 향수 (전문 완독본)</option>
+            <option value="wings">이상 - 날개 (도입부 전문 완독본)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 대시보드 (오도미터 듀얼 롤링 넘버) -->
+      <section class="dashboard">
+        <div class="stat-card">
+          <span class="stat-label">진행 시간</span>
+          <div class="stat-value-group">
+            <div class="stat-value time-group">
+              <div class="digit-box" id="slot-m1"><span class="digit-val">0</span></div>
+              <div class="digit-box" id="slot-m2"><span class="digit-val">0</span></div>
+              <span class="time-colon">:</span>
+              <div class="digit-box" id="slot-s1"><span class="digit-val">0</span></div>
+              <div class="digit-box" id="slot-s2"><span class="digit-val">0</span></div>
+            </div>
           </div>
         </div>
-      </div>
-      <div class="stat-card">
-        <span class="stat-label">현재 타수</span>
-        <div class="stat-value-group">
-          <span id="cpm-display" class="stat-value highlight">0</span>
-          <span class="stat-unit">타/분</span>
-        </div>
-      </div>
-      <div class="stat-card">
-        <span class="stat-label">정확도</span>
-        <div class="stat-value-group">
-          <span id="accuracy-display" class="stat-value">100</span>
-          <span class="stat-unit">%</span>
-        </div>
-      </div>
-
-      <div class="stat-card progress-card">
-        <div class="progress-info">
-          <span class="stat-label">진행도</span>
-          <span id="progress-percent" class="progress-text">0%</span>
-        </div>
-        <div class="progress-bar-bg">
-          <div id="progress-bar" class="progress-bar-fill"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 타자 연습 영역 (상하 3단 컨베이어 피드 + 3초 카운트다운) -->
-    <main class="practice-area">
-      <div id="practice-board" class="practice-board">
-        <!-- 3초 카운트다운 오버레이 -->
-        <div id="countdown-overlay" class="countdown-overlay hidden">
-          <div id="countdown-number" class="countdown-number">3</div>
-          <p id="countdown-sub" class="countdown-sub">잠시 후 연습이 시작됩니다</p>
-        </div>
-
-        <!-- 1단: 당장 입력해야 할 문장 (문제 + 1:1 수직 밀착 입력창) -->
-        <div class="sentence-slot slot-current" id="slot-current">
-          <div class="text-line target-line">
-            <div id="target-display" class="line-content"></div>
+        <div class="stat-card">
+          <span class="stat-label">현재 타수</span>
+          <div class="stat-value-group">
+            <span id="cpm-display" class="stat-value highlight">0</span>
+            <span class="stat-unit">타/분</span>
           </div>
-          <div class="text-line input-line">
-            <div id="user-display" class="line-content"></div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">정확도</span>
+          <div class="stat-value-group">
+            <span id="accuracy-display" class="stat-value">100</span>
+            <span class="stat-unit">%</span>
           </div>
         </div>
 
-        <!-- 2단: 그 다음 입력할 문장 -->
-        <div class="sentence-slot slot-next" id="slot-next">
-          <div id="next-display" class="preview-text"></div>
+        <div class="stat-card progress-card">
+          <div class="progress-info">
+            <span class="stat-label">진행도</span>
+            <span id="progress-percent" class="progress-text">0%</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div id="progress-bar" class="progress-bar-fill"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 타자 연습 영역 (상하 3단 컨베이어 피드 + 3초 카운트다운) -->
+      <main class="practice-area">
+        <div id="practice-board" class="practice-board">
+          <div id="countdown-overlay" class="countdown-overlay hidden">
+            <div id="countdown-number" class="countdown-number">3</div>
+            <p id="countdown-sub" class="countdown-sub">잠시 후 연습이 시작됩니다</p>
+          </div>
+
+          <div class="sentence-slot slot-current" id="slot-current">
+            <div class="text-line target-line">
+              <div id="target-display" class="line-content"></div>
+            </div>
+            <div class="text-line input-line">
+              <div id="user-display" class="line-content"></div>
+            </div>
+          </div>
+
+          <div class="sentence-slot slot-next" id="slot-next">
+            <div id="next-display" class="preview-text"></div>
+          </div>
+
+          <div class="sentence-slot slot-after" id="slot-after">
+            <div id="after-display" class="preview-text"></div>
+          </div>
+
+          <input type="text" id="typing-input" class="hidden-input" autocomplete="off" spellcheck="false">
+        </div>
+      </main>
+
+      <!-- 가상 키보드 -->
+      <div id="keyboard-wrapper" class="keyboard-wrapper">
+        <div class="key-row">
+          <div class="key" data-code="Backquote"><span>~</span><span>`</span></div>
+          <div class="key" data-code="Digit1"><span>!</span><span>1</span></div>
+          <div class="key" data-code="Digit2"><span>@</span><span>2</span></div>
+          <div class="key" data-code="Digit3"><span>#</span><span>3</span></div>
+          <div class="key" data-code="Digit4"><span>$</span><span>4</span></div>
+          <div class="key" data-code="Digit5"><span>%</span><span>5</span></div>
+          <div class="key" data-code="Digit6"><span>^</span><span>6</span></div>
+          <div class="key" data-code="Digit7"><span>&</span><span>7</span></div>
+          <div class="key" data-code="Digit8"><span>*</span><span>8</span></div>
+          <div class="key" data-code="Digit9"><span>(</span><span>9</span></div>
+          <div class="key" data-code="Digit0"><span>)</span><span>0</span></div>
+          <div class="key" data-code="Minus"><span>_</span><span>-</span></div>
+          <div class="key" data-code="Equal"><span>+</span><span>=</span></div>
+          <div class="key key-backspace" data-code="Backspace">Backspace</div>
         </div>
 
-        <!-- 3단: 그 다음다음 입력할 문장 (더 쪼그맣게) -->
-        <div class="sentence-slot slot-after" id="slot-after">
-          <div id="after-display" class="preview-text"></div>
+        <div class="key-row">
+          <div class="key key-tab" data-code="Tab">Tab</div>
+          <div class="key" data-code="KeyQ"><span class="ko">ㅂ</span><span class="en">Q</span></div>
+          <div class="key" data-code="KeyW"><span class="ko">ㅈ</span><span class="en">W</span></div>
+          <div class="key" data-code="KeyE"><span class="ko">ㄷ</span><span class="en">E</span></div>
+          <div class="key" data-code="KeyR"><span class="ko">ㄱ</span><span class="en">R</span></div>
+          <div class="key" data-code="KeyT"><span class="ko">ㅅ</span><span class="en">T</span></div>
+          <div class="key" data-code="KeyY"><span class="ko">ㅛ</span><span class="en">Y</span></div>
+          <div class="key" data-code="KeyU"><span class="ko">ㅕ</span><span class="en">U</span></div>
+          <div class="key" data-code="KeyI"><span class="ko">ㅑ</span><span class="en">I</span></div>
+          <div class="key" data-code="KeyO"><span class="ko">ㅐ</span><span class="en">O</span></div>
+          <div class="key" data-code="KeyP"><span class="ko">ㅔ</span><span class="en">P</span></div>
+          <div class="key" data-code="BracketLeft"><span>{</span><span>[</span></div>
+          <div class="key" data-code="BracketRight"><span>}</span><span>]</span></div>
+          <div class="key key-backslash" data-code="Backslash"><span>|</span><span>\</span></div>
         </div>
 
-        <input type="text" id="typing-input" class="hidden-input" autocomplete="off" spellcheck="false">
-      </div>
-    </main>
+        <div class="key-row">
+          <div class="key key-caps" data-code="CapsLock">Caps</div>
+          <div class="key" data-code="KeyA"><span class="ko">ㅁ</span><span class="en">A</span></div>
+          <div class="key" data-code="KeyS"><span class="ko">ㄴ</span><span class="en">S</span></div>
+          <div class="key" data-code="KeyD"><span class="ko">ㅇ</span><span class="en">D</span></div>
+          <div class="key" data-code="KeyF"><span class="ko">ㄹ</span><span class="en">F</span></div>
+          <div class="key" data-code="KeyG"><span class="ko">ㅎ</span><span class="en">G</span></div>
+          <div class="key" data-code="KeyH"><span class="ko">ㅗ</span><span class="en">H</span></div>
+          <div class="key" data-code="KeyJ"><span class="ko">ㅓ</span><span class="en">J</span></div>
+          <div class="key" data-code="KeyK"><span class="ko">ㅏ</span><span class="en">K</span></div>
+          <div class="key" data-code="KeyL"><span class="ko">ㅣ</span><span class="en">L</span></div>
+          <div class="key" data-code="Semicolon"><span>:</span><span>;</span></div>
+          <div class="key" data-code="Quote"><span>"</span><span>'</span></div>
+          <div class="key key-enter" data-code="Enter">Enter</div>
+        </div>
 
-    <!-- 가상 키보드 -->
-    <div id="keyboard-wrapper" class="keyboard-wrapper">
-      <div class="key-row">
-        <div class="key" data-code="Backquote"><span>~</span><span>`</span></div>
-        <div class="key" data-code="Digit1"><span>!</span><span>1</span></div>
-        <div class="key" data-code="Digit2"><span>@</span><span>2</span></div>
-        <div class="key" data-code="Digit3"><span>#</span><span>3</span></div>
-        <div class="key" data-code="Digit4"><span>$</span><span>4</span></div>
-        <div class="key" data-code="Digit5"><span>%</span><span>5</span></div>
-        <div class="key" data-code="Digit6"><span>^</span><span>6</span></div>
-        <div class="key" data-code="Digit7"><span>&</span><span>7</span></div>
-        <div class="key" data-code="Digit8"><span>*</span><span>8</span></div>
-        <div class="key" data-code="Digit9"><span>(</span><span>9</span></div>
-        <div class="key" data-code="Digit0"><span>)</span><span>0</span></div>
-        <div class="key" data-code="Minus"><span>_</span><span>-</span></div>
-        <div class="key" data-code="Equal"><span>+</span><span>=</span></div>
-        <div class="key key-backspace" data-code="Backspace">Backspace</div>
-      </div>
+        <div class="key-row">
+          <div class="key key-shift" data-code="ShiftLeft">Shift</div>
+          <div class="key" data-code="KeyZ"><span class="ko">ㅋ</span><span class="en">Z</span></div>
+          <div class="key" data-code="KeyX"><span class="ko">ㅌ</span><span class="en">X</span></div>
+          <div class="key" data-code="KeyC"><span class="ko">ㅊ</span><span class="en">C</span></div>
+          <div class="key" data-code="KeyV"><span class="ko">ㅍ</span><span class="en">V</span></div>
+          <div class="key" data-code="KeyB"><span class="ko">ㅠ</span><span class="en">B</span></div>
+          <div class="key" data-code="KeyN"><span class="ko">ㅜ</span><span class="en">N</span></div>
+          <div class="key" data-code="KeyM"><span class="ko">ㅡ</span><span class="en">M</span></div>
+          <div class="key" data-code="Comma"><span>&lt;</span><span>,</span></div>
+          <div class="key" data-code="Period"><span>&gt;</span><span>.</span></div>
+          <div class="key" data-code="Slash"><span>?</span><span>/</span></div>
+          <div class="key key-shift" data-code="ShiftRight">Shift</div>
+        </div>
 
-      <div class="key-row">
-        <div class="key key-tab" data-code="Tab">Tab</div>
-        <div class="key" data-code="KeyQ"><span class="ko">ㅂ</span><span class="en">Q</span></div>
-        <div class="key" data-code="KeyW"><span class="ko">ㅈ</span><span class="en">W</span></div>
-        <div class="key" data-code="KeyE"><span class="ko">ㄷ</span><span class="en">E</span></div>
-        <div class="key" data-code="KeyR"><span class="ko">ㄱ</span><span class="en">R</span></div>
-        <div class="key" data-code="KeyT"><span class="ko">ㅅ</span><span class="en">T</span></div>
-        <div class="key" data-code="KeyY"><span class="ko">ㅛ</span><span class="en">Y</span></div>
-        <div class="key" data-code="KeyU"><span class="ko">ㅕ</span><span class="en">U</span></div>
-        <div class="key" data-code="KeyI"><span class="ko">ㅑ</span><span class="en">I</span></div>
-        <div class="key" data-code="KeyO"><span class="ko">ㅐ</span><span class="en">O</span></div>
-        <div class="key" data-code="KeyP"><span class="ko">ㅔ</span><span class="en">P</span></div>
-        <div class="key" data-code="BracketLeft"><span>{</span><span>[</span></div>
-        <div class="key" data-code="BracketRight"><span>}</span><span>]</span></div>
-        <div class="key key-backslash" data-code="Backslash"><span>|</span><span>\</span></div>
-      </div>
-
-      <div class="key-row">
-        <div class="key key-caps" data-code="CapsLock">Caps</div>
-        <div class="key" data-code="KeyA"><span class="ko">ㅁ</span><span class="en">A</span></div>
-        <div class="key" data-code="KeyS"><span class="ko">ㄴ</span><span class="en">S</span></div>
-        <div class="key" data-code="KeyD"><span class="ko">ㅇ</span><span class="en">D</span></div>
-        <div class="key" data-code="KeyF"><span class="ko">ㄹ</span><span class="en">F</span></div>
-        <div class="key" data-code="KeyG"><span class="ko">ㅎ</span><span class="en">G</span></div>
-        <div class="key" data-code="KeyH"><span class="ko">ㅗ</span><span class="en">H</span></div>
-        <div class="key" data-code="KeyJ"><span class="ko">ㅓ</span><span class="en">J</span></div>
-        <div class="key" data-code="KeyK"><span class="ko">ㅏ</span><span class="en">K</span></div>
-        <div class="key" data-code="KeyL"><span class="ko">ㅣ</span><span class="en">L</span></div>
-        <div class="key" data-code="Semicolon"><span>:</span><span>;</span></div>
-        <div class="key" data-code="Quote"><span>"</span><span>'</span></div>
-        <div class="key key-enter" data-code="Enter">Enter</div>
-      </div>
-
-      <div class="key-row">
-        <div class="key key-shift" data-code="ShiftLeft">Shift</div>
-        <div class="key" data-code="KeyZ"><span class="ko">ㅋ</span><span class="en">Z</span></div>
-        <div class="key" data-code="KeyX"><span class="ko">ㅌ</span><span class="en">X</span></div>
-        <div class="key" data-code="KeyC"><span class="ko">ㅊ</span><span class="en">C</span></div>
-        <div class="key" data-code="KeyV"><span class="ko">ㅍ</span><span class="en">V</span></div>
-        <div class="key" data-code="KeyB"><span class="ko">ㅠ</span><span class="en">B</span></div>
-        <div class="key" data-code="KeyN"><span class="ko">ㅜ</span><span class="en">N</span></div>
-        <div class="key" data-code="KeyM"><span class="ko">ㅡ</span><span class="en">M</span></div>
-        <div class="key" data-code="Comma"><span>&lt;</span><span>,</span></div>
-        <div class="key" data-code="Period"><span>&gt;</span><span>.</span></div>
-        <div class="key" data-code="Slash"><span>?</span><span>/</span></div>
-        <div class="key key-shift" data-code="ShiftRight">Shift</div>
-      </div>
-
-      <div class="key-row">
-        <div class="key key-space" data-code="Space">Space</div>
+        <div class="key-row">
+          <div class="key key-space" data-code="Space">Space</div>
+        </div>
       </div>
     </div>
 
